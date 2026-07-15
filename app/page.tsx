@@ -36,7 +36,6 @@ export default function Home() {
   const [fareConfig, setFareConfig] = useState<FareConfig>(defaultFareConfig);
   const [days, setDays] = useState(1);
   const [overnightStays, setOvernightStays] = useState(0);
-  const [tollCharges, setTollCharges] = useState(0);
   const [travelDate, setTravelDate] = useState(getTomorrowDate);
   const [pickupTime, setPickupTime] = useState("08:00");
   const [bookingStatus, setBookingStatus] = useState("");
@@ -68,11 +67,10 @@ export default function Home() {
         tripType,
         days,
         overnightStays,
-        tollCharges,
       },
       fareConfig,
     );
-  }, [selectedCab, estimatedDistance, tripType, days, overnightStays, tollCharges, fareConfig]);
+  }, [selectedCab, estimatedDistance, tripType, days, overnightStays, fareConfig]);
 
   async function checkFares(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -280,11 +278,8 @@ export default function Home() {
                 <span>Driver overnight stays</span>
                 <input type="number" min="0" max="29" value={overnightStays} onChange={(event) => setOvernightStays(Math.max(0, Number(event.target.value)))} />
               </label>
-              <label>
-                <span>Estimated tolls (₹)</span>
-                <input type="number" min="0" value={tollCharges} onChange={(event) => setTollCharges(Math.max(0, Number(event.target.value)))} />
-              </label>
             </div>
+            <p className="extras-notice">Tolls, parking and permit/state-entry charges are excluded from this estimate and added later at actual cost against receipts.</p>
             <p className="form-notice" role="status" aria-live="polite">
               {notice}
             </p>
@@ -484,7 +479,7 @@ export default function Home() {
             </details>
             <details>
               <summary>What is included in the quoted fare?</summary>
-              <p>Your quote shows the cab fare and applicable driver allowance. Tolls, state taxes and parking are displayed separately before confirmation.</p>
+              <p>Your online estimate includes the cab charge, distance charge, driver costs, booking fee and GST. Tolls, parking and permit/state-entry charges are added later at actual cost against receipts.</p>
             </details>
             <details>
               <summary>Can I make stops during the trip?</summary>
