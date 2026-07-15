@@ -20,6 +20,7 @@ export type FareBreakdown = {
   tax: number;
   total: number;
   perKmRate: number;
+  gstPercent: number;
 };
 
 const roundMoney = (value: number) => Math.round(value * 100) / 100;
@@ -32,7 +33,7 @@ export function calculateFare(input: FareInput, config: FareConfig): FareBreakdo
   const billableDistanceKm = Math.max(config.minimumDistanceKm, Math.round(measuredDistance));
   const perKmRate = config.perKm[input.vehicle];
 
-  const dayFare = config.baseDayFare * days;
+  const dayFare = config.baseDayFare[input.vehicle] * days;
   const distanceCharge = billableDistanceKm * perKmRate;
   const driverAllowance = config.driverDayAllowance * days;
   const driverStay = config.driverOvernightStay * nights;
@@ -52,6 +53,7 @@ export function calculateFare(input: FareInput, config: FareConfig): FareBreakdo
     tax: roundMoney(tax),
     total: roundMoney(subtotal + tax),
     perKmRate,
+    gstPercent: config.taxPercent,
   };
 }
 
