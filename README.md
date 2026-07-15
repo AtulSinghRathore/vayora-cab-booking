@@ -6,7 +6,7 @@ Vayora is a responsive cab-booking website for trips starting in Jamshedpur and 
 
 - Searchable Indian city autocomplete with mouse and keyboard selection
 - One-way and round-trip bookings
-- Configurable full-day, per-kilometre, driver allowance, overnight stay, toll, booking and tax charges
+- Configurable full-day, per-kilometre, driver allowance, overnight stay, booking and GST charges
 - Transparent fare breakdown before booking
 - Customer booking form that sends ride details to the business email
 - Responsive desktop and mobile design
@@ -27,7 +27,6 @@ driver.dayAllowance=350
 driver.overnightStay=800
 distance.roadFactor=1.18
 distance.minimumKm=20
-toll.default=0
 gst.percent=5
 ```
 
