@@ -4,14 +4,15 @@ type Props = {
   breakdown: FareBreakdown;
   vehicleName: string;
   destination: string;
+  baseFareLabel?: string;
 };
 
 const money = (value: number) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(value);
 
-export default function FareBreakdownPanel({ breakdown, vehicleName, destination }: Props) {
+export default function FareBreakdownPanel({ breakdown, vehicleName, destination, baseFareLabel = "Full-day cab charge" }: Props) {
   const rows = [
-    ["Full-day cab charge", breakdown.dayFare],
+    [baseFareLabel, breakdown.dayFare],
     [`Fuel & distance (${breakdown.billableDistanceKm} km × ${money(breakdown.perKmRate)})`, breakdown.distanceCharge],
     ["Driver allowance", breakdown.driverAllowance],
     ["Driver overnight stay", breakdown.driverStay],
