@@ -135,7 +135,7 @@ export default function Home() {
       const result = await response.json();
       setBookingStatus(result.message || result.error || "Unable to send the booking request.");
     } catch {
-      setBookingStatus("Unable to send the booking request. Please call +91 80922 53270.");
+      setBookingStatus("Unable to send the booking request. Please call +91 93045 91415.");
     } finally {
       setSubmittingBooking(false);
     }
@@ -161,8 +161,8 @@ export default function Home() {
         </nav>
 
         <div className="header-actions">
-          <a className="phone-link" href="tel:+918092253270">
-            <span aria-hidden="true">●</span> +91 80922 53270
+          <a className="phone-link" href="tel:+919304591415">
+            <span aria-hidden="true">●</span> +91 93045 91415
           </a>
           <a className="login-link" href="#account">
             Sign in
@@ -355,11 +355,11 @@ export default function Home() {
                     {submittingBooking ? "Sending request…" : `Request booking for ₹${Math.round(fareBreakdown.total).toLocaleString("en-IN")}`}
                   </button>
                   <p className="booking-status" role="status" aria-live="polite">{bookingStatus}</p>
-                  <p className="privacy-note">Your details are sent only to Vayora booking support at monukr283@gmail.com.</p>
+                  <p className="privacy-note">Your details are sent only to Vayora booking support at natul0636@gmail.com.</p>
                 </form>
                 <div className="selection-bar" role="status" aria-live="polite">
                   <span><b>{selectedVehicle.name}</b> selected for Jamshedpur → {destination.trim()}</span>
-                  <a href="tel:+918092253270">Call +91 80922 53270 →</a>
+                  <a href="tel:+919304591415">Call +91 93045 91415 →</a>
                 </div>
               </div>
             )}
@@ -473,7 +473,7 @@ export default function Home() {
             <p className="section-kicker">Good to know</p>
             <h2 id="faq-heading">Questions before you go?</h2>
             <p className="faq-lead">Clear answers make for calmer journeys.</p>
-            <a className="support-link" href="tel:+918092253270">Talk to travel support →</a>
+            <a className="support-link" href="tel:+919304591415">Talk to travel support →</a>
           </div>
           <div className="faq-list">
             <details open>
@@ -515,8 +515,8 @@ export default function Home() {
         </div>
         <div>
           <p className="footer-title">Contact</p>
-          <a href="tel:+918092253270">+91 80922 53270</a>
-          <a href="mailto:monukr283@gmail.com">monukr283@gmail.com</a>
+          <a href="tel:+919304591415">+91 93045 91415</a>
+          <a href="mailto:natul0636@gmail.com">natul0636@gmail.com</a>
           <span>Jamshedpur, Jharkhand</span>
         </div>
         <div className="footer-bottom">
