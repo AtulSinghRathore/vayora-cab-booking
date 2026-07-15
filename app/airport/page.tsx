@@ -202,7 +202,14 @@ export default function AirportPage() {
               </article>)}
             </div>
             {selectedVehicle && fareBreakdown && <div className="booking-completion">
-              <FareBreakdownPanel breakdown={fareBreakdown} vehicleName={selectedVehicle.name} destination={destinationLabel} baseFareLabel="Airport cab charge" />
+              <FareBreakdownPanel
+                breakdown={fareBreakdown}
+                vehicleName={selectedVehicle.name}
+                destination={destinationLabel}
+                baseFareLabel="Airport cab charge"
+                bookingFeeLabel="Airport coordination fee"
+                bookingFeeNote="Covers flight-detail handling, pickup scheduling and airport transfer coordination. It is shown separately and included in the displayed total."
+              />
               <form className="customer-form" onSubmit={submitBooking}>
                 <div className="customer-form-heading"><p>Request airport transfer</p><h3>Passenger and pickup details</h3></div>
                 <div className="customer-fields">
