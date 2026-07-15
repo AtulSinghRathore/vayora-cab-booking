@@ -10,6 +10,13 @@ export type FareConfig = {
   roadFactor: number;
   minimumDistanceKm: number;
   taxPercent: number;
+  airport: {
+    bookingFee: number;
+    baseFare: Record<VehicleKey, number>;
+    perKm: Record<VehicleKey, number>;
+    freeWaitingMinutes: number;
+    waitingPerHour: number;
+  };
 };
 
 export const defaultFareConfig: FareConfig = {
@@ -22,6 +29,13 @@ export const defaultFareConfig: FareConfig = {
   roadFactor: 1.18,
   minimumDistanceKm: 20,
   taxPercent: 5,
+  airport: {
+    bookingFee: 149,
+    baseFare: { go: 1300, plus: 1600, xl: 2200 },
+    perKm: { go: 13, plus: 15, xl: 20 },
+    freeWaitingMinutes: 30,
+    waitingPerHour: 200,
+  },
 };
 
 function toNumber(properties: Record<string, string>, key: string, fallback: number) {
@@ -57,5 +71,20 @@ export function parseFareProperties(source: string): FareConfig {
     roadFactor: toNumber(properties, "distance.roadFactor", defaultFareConfig.roadFactor),
     minimumDistanceKm: toNumber(properties, "distance.minimumKm", defaultFareConfig.minimumDistanceKm),
     taxPercent: toNumber(properties, "gst.percent", toNumber(properties, "tax.percent", defaultFareConfig.taxPercent)),
+    airport: {
+      bookingFee: toNumber(properties, "airport.bookingFee", defaultFareConfig.airport.bookingFee),
+      baseFare: {
+        go: toNumber(properties, "airport.go.baseFare", defaultFareConfig.airport.baseFare.go),
+        plus: toNumber(properties, "airport.plus.baseFare", defaultFareConfig.airport.baseFare.plus),
+        xl: toNumber(properties, "airport.xl.baseFare", defaultFareConfig.airport.baseFare.xl),
+      },
+      perKm: {
+        go: toNumber(properties, "airport.go.perKm", defaultFareConfig.airport.perKm.go),
+        plus: toNumber(properties, "airport.plus.perKm", defaultFareConfig.airport.perKm.plus),
+        xl: toNumber(properties, "airport.xl.perKm", defaultFareConfig.airport.perKm.xl),
+      },
+      freeWaitingMinutes: toNumber(properties, "airport.waiting.freeMinutes", defaultFareConfig.airport.freeWaitingMinutes),
+      waitingPerHour: toNumber(properties, "airport.waiting.perHour", defaultFareConfig.airport.waitingPerHour),
+    },
   };
 }
