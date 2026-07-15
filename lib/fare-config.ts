@@ -2,7 +2,7 @@ export type VehicleKey = "go" | "plus" | "xl";
 
 export type FareConfig = {
   currency: string;
-  baseDayFare: number;
+  baseDayFare: Record<VehicleKey, number>;
   bookingFee: number;
   perKm: Record<VehicleKey, number>;
   driverDayAllowance: number;
@@ -15,7 +15,7 @@ export type FareConfig = {
 
 export const defaultFareConfig: FareConfig = {
   currency: "INR",
-  baseDayFare: 1300,
+  baseDayFare: { go: 1300, plus: 1600, xl: 2200 },
   bookingFee: 99,
   perKm: { go: 13, plus: 15, xl: 20 },
   driverDayAllowance: 350,
@@ -43,7 +43,11 @@ export function parseFareProperties(source: string): FareConfig {
 
   return {
     currency: properties.currency || defaultFareConfig.currency,
-    baseDayFare: toNumber(properties, "base.dayFare", defaultFareConfig.baseDayFare),
+    baseDayFare: {
+      go: toNumber(properties, "vehicle.go.baseDayFare", toNumber(properties, "base.dayFare", defaultFareConfig.baseDayFare.go)),
+      plus: toNumber(properties, "vehicle.plus.baseDayFare", toNumber(properties, "base.dayFare", defaultFareConfig.baseDayFare.plus)),
+      xl: toNumber(properties, "vehicle.xl.baseDayFare", toNumber(properties, "base.dayFare", defaultFareConfig.baseDayFare.xl)),
+    },
     bookingFee: toNumber(properties, "booking.fee", defaultFareConfig.bookingFee),
     perKm: {
       go: toNumber(properties, "vehicle.go.perKm", defaultFareConfig.perKm.go),
@@ -55,6 +59,6 @@ export function parseFareProperties(source: string): FareConfig {
     roadFactor: toNumber(properties, "distance.roadFactor", defaultFareConfig.roadFactor),
     minimumDistanceKm: toNumber(properties, "distance.minimumKm", defaultFareConfig.minimumDistanceKm),
     defaultToll: toNumber(properties, "toll.default", defaultFareConfig.defaultToll),
-    taxPercent: toNumber(properties, "tax.percent", defaultFareConfig.taxPercent),
+    taxPercent: toNumber(properties, "gst.percent", toNumber(properties, "tax.percent", defaultFareConfig.taxPercent)),
   };
 }
