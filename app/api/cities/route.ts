@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
   try {
     const response = await fetch(endpoint, {
       headers: {
-        "User-Agent": "VayoraCabBooking/1.0 (monukr283@gmail.com)",
+        "User-Agent": "VayoraCabBooking/1.0 (natul0636@gmail.com)",
         "Accept-Language": "en-IN,en;q=0.9",
       },
       next: { revalidate: 86400 },
