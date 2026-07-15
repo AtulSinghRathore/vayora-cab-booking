@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const notificationEmail = process.env.BOOKING_NOTIFICATION_EMAIL || "monukr283@gmail.com";
-const businessPhone = process.env.BOOKING_PHONE || "+918092253270";
+const notificationEmail = process.env.BOOKING_NOTIFICATION_EMAIL || "natul0636@gmail.com";
+const businessPhone = process.env.BOOKING_PHONE || "+919304591415";
 
 const escapeHtml = (value: unknown) =>
   String(value ?? "").replace(/[&<>'"]/g, (character) => ({
