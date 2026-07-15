@@ -727,6 +727,10 @@ h1 span {
   font-size: 1.2rem;
 }
 
+.fare-price strong + span + strong {
+  margin-top: 9px;
+}
+
 .fare-price span {
   margin-top: 3px;
   color: var(--muted);
