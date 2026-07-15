@@ -16,8 +16,10 @@ Vayora is a responsive cab-booking website for trips starting in Jamshedpur and 
 All editable fare values are in [`public/config/fare.properties`](public/config/fare.properties).
 
 ```properties
-base.dayFare=1300
 booking.fee=99
+vehicle.go.baseDayFare=1300
+vehicle.plus.baseDayFare=1600
+vehicle.xl.baseDayFare=2200
 vehicle.go.perKm=13
 vehicle.plus.perKm=15
 vehicle.xl.perKm=20
@@ -26,7 +28,7 @@ driver.overnightStay=800
 distance.roadFactor=1.18
 distance.minimumKm=20
 toll.default=0
-tax.percent=5
+gst.percent=5
 ```
 
 The calculation logic is isolated in `lib/fare-calculator.ts`. The UI never contains hard-coded fare amounts.
