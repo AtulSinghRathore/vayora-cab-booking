@@ -274,7 +274,7 @@ h1 span {
 }
 
 .location-row {
-  grid-template-columns: 1fr 18px 1fr;
+  grid-template-columns: 0.9fr 18px 1fr 0.72fr;
   align-items: center;
   margin-bottom: 10px;
 }
@@ -330,6 +330,10 @@ h1 span {
 .destination-field {
   position: relative;
   z-index: 8;
+}
+
+.state-field input[readonly] {
+  color: var(--forest);
 }
 
 .autocomplete {
