@@ -17,7 +17,7 @@ export default function FareBreakdownPanel({ breakdown, vehicleName, destination
     ["Driver overnight stay", breakdown.driverStay],
     ["Estimated tolls", breakdown.tollCharges],
     ["Booking fee", breakdown.bookingFee],
-    ["Tax", breakdown.tax],
+    [`GST (${breakdown.gstPercent}%)`, breakdown.tax],
   ] as const;
 
   return (
