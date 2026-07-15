@@ -15,7 +15,6 @@ export default function FareBreakdownPanel({ breakdown, vehicleName, destination
     [`Fuel & distance (${breakdown.billableDistanceKm} km × ${money(breakdown.perKmRate)})`, breakdown.distanceCharge],
     ["Driver allowance", breakdown.driverAllowance],
     ["Driver overnight stay", breakdown.driverStay],
-    ["Estimated tolls", breakdown.tollCharges],
     ["Booking fee", breakdown.bookingFee],
     [`GST (${breakdown.gstPercent}%)`, breakdown.tax],
   ] as const;
@@ -31,7 +30,7 @@ export default function FareBreakdownPanel({ breakdown, vehicleName, destination
           <div key={label}><dt>{label}</dt><dd>{money(value)}</dd></div>
         ))}
       </dl>
-      <p className="estimate-note">Final toll and parking charges are confirmed against actual receipts.</p>
+      <p className="estimate-note">Tolls, parking and permit/state-entry charges are not included. They are added later at actual cost against receipts.</p>
     </div>
   );
 }
