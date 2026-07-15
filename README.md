@@ -37,7 +37,7 @@ Create a [Resend](https://resend.com) account, verify a sender domain, and confi
 
 ```text
 RESEND_API_KEY=your_api_key
-BOOKING_FROM_EMAIL=Vayora Bookings <bookings@your-domain.com>
+BOOKING_FROM_EMAIL=Vayora Bookings <onboarding@resend.dev>
 BOOKING_NOTIFICATION_EMAIL=monukr283@gmail.com
 BOOKING_PHONE=+918092253270
 ```
