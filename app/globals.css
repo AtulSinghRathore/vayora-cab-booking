@@ -550,6 +550,7 @@ h1 span {
 .airport-details-grid input { width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--navy); font-size: .78rem; font-weight: 650; }
 .airport-submit { width: 100%; margin-top: 14px; }
 .waiting-note { margin: 12px 0; color: var(--muted); font-size: .76rem; line-height: 1.5; }
+.fee-explanation { margin: 16px 0 0; padding: 12px 14px; border-radius: 10px; background: #fff5e6; color: var(--navy); font-size: .76rem; line-height: 1.55; }
 .airport-footer { grid-template-columns: 1fr auto; }
 
 @media (max-width: 960px) {
