@@ -30,6 +30,7 @@ distance.minimumKm=20
 gst.percent=5
 
 # Airport transfers
+# Coordination fee is displayed separately to customers and can be set to 0.
 airport.bookingFee=149
 airport.go.baseFare=1300
 airport.plus.baseFare=1600
