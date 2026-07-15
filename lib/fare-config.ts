@@ -9,7 +9,6 @@ export type FareConfig = {
   driverOvernightStay: number;
   roadFactor: number;
   minimumDistanceKm: number;
-  defaultToll: number;
   taxPercent: number;
 };
 
@@ -22,7 +21,6 @@ export const defaultFareConfig: FareConfig = {
   driverOvernightStay: 800,
   roadFactor: 1.18,
   minimumDistanceKm: 20,
-  defaultToll: 0,
   taxPercent: 5,
 };
 
@@ -58,7 +56,6 @@ export function parseFareProperties(source: string): FareConfig {
     driverOvernightStay: toNumber(properties, "driver.overnightStay", defaultFareConfig.driverOvernightStay),
     roadFactor: toNumber(properties, "distance.roadFactor", defaultFareConfig.roadFactor),
     minimumDistanceKm: toNumber(properties, "distance.minimumKm", defaultFareConfig.minimumDistanceKm),
-    defaultToll: toNumber(properties, "toll.default", defaultFareConfig.defaultToll),
     taxPercent: toNumber(properties, "gst.percent", toNumber(properties, "tax.percent", defaultFareConfig.taxPercent)),
   };
 }
