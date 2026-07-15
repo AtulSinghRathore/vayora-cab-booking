@@ -38,8 +38,8 @@ Create a [Resend](https://resend.com) account, verify a sender domain, and confi
 ```text
 RESEND_API_KEY=your_api_key
 BOOKING_FROM_EMAIL=Vayora Bookings <onboarding@resend.dev>
-BOOKING_NOTIFICATION_EMAIL=monukr283@gmail.com
-BOOKING_PHONE=+918092253270
+BOOKING_NOTIFICATION_EMAIL=natul0636@gmail.com
+BOOKING_PHONE=+919304591415
 ```
 
 Never commit the real API key. `.env.example` contains only safe placeholders.
