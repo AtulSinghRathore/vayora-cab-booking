@@ -31,6 +31,7 @@ export default function Home() {
   const [selectedCity, setSelectedCity] = useState<CitySuggestion | null>(null);
   const [notice, setNotice] = useState("");
   const [showFares, setShowFares] = useState(false);
+  const [checkingFares, setCheckingFares] = useState(false);
   const [selectedCab, setSelectedCab] = useState<VehicleKey | "">("");
   const [fareConfig, setFareConfig] = useState<FareConfig>(defaultFareConfig);
   const [days, setDays] = useState(1);
@@ -73,18 +74,44 @@ export default function Home() {
     );
   }, [selectedCab, estimatedDistance, tripType, days, overnightStays, tollCharges, fareConfig]);
 
-  function checkFares(event: FormEvent<HTMLFormElement>) {
+  async function checkFares(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const place = destination.trim();
-    if (!selectedCity) {
+    if (!place) {
       setShowFares(false);
-      setNotice("Choose a city from the suggestions so we can calculate its distance.");
+      setNotice("Tell us where you want to go to check available rides.");
       return;
     }
-    setShowFares(Boolean(place));
+
+    setCheckingFares(true);
+    setNotice("");
+    let resolvedCity = selectedCity;
+    if (!resolvedCity) {
+      try {
+        const response = await fetch(`/api/cities?q=${encodeURIComponent(place)}`);
+        const matches = response.ok ? ((await response.json()) as CitySuggestion[]) : [];
+        resolvedCity = matches[0] || null;
+      } catch {
+        resolvedCity = null;
+      }
+    }
+
+    if (!resolvedCity) {
+      setShowFares(false);
+      setNotice("We could not find that city. Please choose a destination from the suggestions.");
+      setCheckingFares(false);
+      return;
+    }
+
+    setSelectedCity(resolvedCity);
+    setDestination(resolvedCity.city);
+    setShowFares(true);
     setSelectedCab("");
     setBookingStatus("");
-    setNotice(place ? "" : "Tell us where you want to go to check available rides.");
+    setCheckingFares(false);
+    window.setTimeout(() => {
+      document.getElementById("fares")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
   }
 
   async function submitBooking(event: FormEvent<HTMLFormElement>) {
@@ -207,6 +234,15 @@ export default function Home() {
                   }}
                 />
               </label>
+              <label className="field state-field">
+                <span>State</span>
+                <input
+                  value={selectedCity?.state || ""}
+                  placeholder="Auto-filled"
+                  aria-label="Destination state"
+                  readOnly
+                />
+              </label>
             </div>
 
             <div className="schedule-row">
@@ -231,8 +267,8 @@ export default function Home() {
                   required
                 />
               </label>
-              <button className="primary-button" type="submit">
-                Check fares <span aria-hidden="true">→</span>
+              <button className="primary-button" type="submit" disabled={checkingFares}>
+                {checkingFares ? "Finding fares…" : "Check fares"} <span aria-hidden="true">→</span>
               </button>
             </div>
             <div className="trip-details-row">
