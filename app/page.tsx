@@ -322,6 +322,8 @@ export default function Home() {
                     <p>{cab.note}</p>
                   </div>
                   <div className="fare-price">
+                    <strong>₹{fareConfig.baseDayFare[cab.key].toLocaleString("en-IN")}/day</strong>
+                    <span>fixed cab charge</span>
                     <strong>₹{fareConfig.perKm[cab.key]}/km</strong>
                     <span>fuel & running</span>
                   </div>
