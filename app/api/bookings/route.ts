@@ -27,6 +27,7 @@ export async function POST(request: NextRequest) {
     ["Customer", booking.name], ["Customer phone", booking.phone], ["Customer email", booking.email || "Not provided"],
     ["Pickup", booking.pickup], ["Destination", booking.destination], ["Travel date", booking.travelDate],
     ["Pickup time", booking.pickupTime], ["Trip type", booking.tripType], ["Vehicle", booking.vehicle],
+    ...(booking.airport ? [["Airport", booking.airport], ["Flight number", booking.flightNumber || "Not provided"], ["Passengers", booking.passengers], ["Luggage", booking.luggage], ["Exact pickup/drop address", booking.pickupAddress || "Not provided"]] : []),
     ["Days", booking.days], ["Overnight stays", booking.overnightStays], ["Estimated distance", `${booking.distanceKm} km`],
     ["Estimated fare", `₹${booking.fareTotal}`], ["Customer note", booking.note || "None"],
   ];
