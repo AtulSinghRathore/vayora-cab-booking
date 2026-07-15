@@ -154,7 +154,7 @@ export default function Home() {
             Outstation
           </a>
           <a href="#fleet">Local</a>
-          <a href="#fleet">Airport</a>
+          <a href="/airport">Airport</a>
           <a href="#business">Corporate</a>
         </nav>
 
@@ -403,7 +403,7 @@ export default function Home() {
                 <h3>Airport transfers</h3>
                 <p>Reliable pickup for Ranchi and Kolkata airport connections.</p>
               </div>
-              <a href="#book">Book an airport cab →</a>
+              <a href="/airport">Book an airport cab →</a>
             </article>
           </div>
         </div>
@@ -508,7 +508,7 @@ export default function Home() {
         </div>
         <div>
           <p className="footer-title">Services</p>
-          <a href="#fleet">Outstation</a><a href="#fleet">Local</a><a href="#fleet">Airport</a><a href="#business">Corporate</a>
+          <a href="#fleet">Outstation</a><a href="#fleet">Local</a><a href="/airport">Airport</a><a href="#business">Corporate</a>
         </div>
         <div>
           <p className="footer-title">Contact</p>
