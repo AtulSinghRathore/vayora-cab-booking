@@ -28,6 +28,17 @@ driver.overnightStay=800
 distance.roadFactor=1.18
 distance.minimumKm=20
 gst.percent=5
+
+# Airport transfers
+airport.bookingFee=149
+airport.go.baseFare=1300
+airport.plus.baseFare=1600
+airport.xl.baseFare=2200
+airport.go.perKm=13
+airport.plus.perKm=15
+airport.xl.perKm=20
+airport.waiting.freeMinutes=30
+airport.waiting.perHour=200
 ```
 
 The calculation logic is isolated in `lib/fare-calculator.ts`. The UI never contains hard-coded fare amounts.
