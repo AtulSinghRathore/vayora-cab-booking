@@ -6,7 +6,6 @@ export type FareInput = {
   tripType: "one-way" | "round-trip";
   days: number;
   overnightStays: number;
-  tollCharges: number;
 };
 
 export type FareBreakdown = {
@@ -15,7 +14,6 @@ export type FareBreakdown = {
   distanceCharge: number;
   driverAllowance: number;
   driverStay: number;
-  tollCharges: number;
   bookingFee: number;
   tax: number;
   total: number;
@@ -37,9 +35,8 @@ export function calculateFare(input: FareInput, config: FareConfig): FareBreakdo
   const distanceCharge = billableDistanceKm * perKmRate;
   const driverAllowance = config.driverDayAllowance * days;
   const driverStay = config.driverOvernightStay * nights;
-  const tollCharges = Math.max(0, input.tollCharges || config.defaultToll);
   const bookingFee = config.bookingFee;
-  const subtotal = dayFare + distanceCharge + driverAllowance + driverStay + tollCharges + bookingFee;
+  const subtotal = dayFare + distanceCharge + driverAllowance + driverStay + bookingFee;
   const tax = subtotal * (config.taxPercent / 100);
 
   return {
@@ -48,7 +45,6 @@ export function calculateFare(input: FareInput, config: FareConfig): FareBreakdo
     distanceCharge: roundMoney(distanceCharge),
     driverAllowance: roundMoney(driverAllowance),
     driverStay: roundMoney(driverStay),
-    tollCharges: roundMoney(tollCharges),
     bookingFee: roundMoney(bookingFee),
     tax: roundMoney(tax),
     total: roundMoney(subtotal + tax),
