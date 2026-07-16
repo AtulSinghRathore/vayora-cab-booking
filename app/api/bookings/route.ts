@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cleanupExpiredBookings, createBookingId, deletionDateFrom, ensureSchema, getDatabase } from "../../../lib/platform";
 import { defaultFareConfig, parseFareProperties } from "../../../lib/fare-config";
-import { sendBookingNotification, sendDeletionReminder } from "../../../lib/email";
+import { sendBookingChangeNotification, sendBookingNotification } from "../../../lib/email";
 
 export async function POST(request: NextRequest) {
   const contentType = request.headers.get("content-type") || "";
@@ -71,7 +71,7 @@ export async function PATCH(request: NextRequest) {
   await ensureSchema(db);
   await cleanupExpiredBookings(db);
   const digits = String(phone || "").replace(/\D/g, "").slice(-10);
-  type BookingRow = { id:string; status:string; travel_date:string; pickup_time:string|null; fare_total:number };
+  type BookingRow = { id:string; status:string; customer_name:string; phone:string; pickup:string; destination:string; travel_date:string; pickup_time:string|null; fare_total:number };
   const row = await db.prepare("SELECT * FROM bookings WHERE id=? AND REPLACE(REPLACE(REPLACE(phone,'+',''),' ',''),'-','') LIKE ?").bind(String(id).toUpperCase(), `%${digits}`).first<BookingRow>();
   if (!row) return NextResponse.json({ error: "Booking not found." }, { status: 404 });
   if (action === "cancel") {
@@ -84,17 +84,32 @@ export async function PATCH(request: NextRequest) {
       : Math.min(config.cancellation.maximumWithin48Hours, Number(row.fare_total) * config.cancellation.within48HoursPercent / 100);
     const cancelledAt = new Date();
     const deleteAfter = deletionDateFrom(cancelledAt);
-    await db.prepare("UPDATE bookings SET status='cancelled',cancelled_at=?,delete_after=?,updated_at=?,admin_note=? WHERE id=?").bind(cancelledAt.toISOString(), deleteAfter, cancelledAt.toISOString(), `Customer cancellation. Indicative fee: ₹${Math.round(cancellationFee)}`, row.id).run();
-    await sendDeletionReminder({ bookingId: row.id, status: "cancelled", deleteAfter });
-    return NextResponse.json({ success: true, cancellationFee, message: cancellationFee ? `Cancellation recorded. Applicable fee: ₹${Math.round(cancellationFee)}.` : "Booking cancelled with no fee." });
+    await db.prepare("UPDATE bookings SET status='cancelled',cancelled_at=?,delete_after=?,updated_at=?,admin_note=? WHERE id=?").bind(cancelledAt.toISOString(), deleteAfter, cancelledAt.toISOString(), `Customer cancellation. Applicable fee: ₹${Math.round(cancellationFee)}. Refund handled manually through WhatsApp payment channel.`, row.id).run();
+    const notification = await sendBookingChangeNotification({
+      action: "cancellation", bookingId: row.id, customerName: row.customer_name, phone: row.phone,
+      pickup: row.pickup, destination: row.destination, previousTravelDate: row.travel_date,
+      previousPickupTime: row.pickup_time, charge: cancellationFee, deleteAfter,
+    });
+    const feeMessage = cancellationFee ? `Applicable cancellation fee: ₹${Math.round(cancellationFee)}.` : "No cancellation fee applies.";
+    return NextResponse.json({ success: true, cancellationFee, notificationSent: notification.ok, message: `Booking cancelled. ${feeMessage} ${notification.ok ? "Vayora has been notified by email." : "The admin panel was updated, but the notification email could not be sent."}` });
   }
   if (action === "amend") {
-    const dateChanged = travelDate && travelDate !== row.travel_date;
     const settings = await db.prepare("SELECT value FROM settings WHERE key='fare.properties'").first<{ value: string }>();
     const config = settings?.value ? parseFareProperties(settings.value) : defaultFareConfig;
-    await db.prepare("UPDATE bookings SET travel_date=?,pickup_time=?,status='amendment_requested',admin_note=?,updated_at=? WHERE id=?")
-      .bind(travelDate || row.travel_date, pickupTime || row.pickup_time, note || "Customer amendment request", new Date().toISOString(), row.id).run();
-    return NextResponse.json({ success: true, dateChangeFeeApplies: Boolean(dateChanged), dateChangeFee: dateChanged ? config.cancellation.dateChangeFee : 0, message: dateChanged ? `Amendment requested. Configured date-change fee: ₹${config.cancellation.dateChangeFee}; it will be confirmed before approval.` : "Amendment requested with no amendment fee." });
+    const amendmentFee = config.cancellation.amendmentFee;
+    const newTravelDate = String(travelDate || row.travel_date);
+    const newPickupTime = String(pickupTime || row.pickup_time || "");
+    const customerNote = String(note || "Customer amendment request").slice(0, 1000);
+    const updatedFare = Number(row.fare_total) + amendmentFee;
+    await db.prepare("UPDATE bookings SET travel_date=?,pickup_time=?,fare_total=?,status='amendment_requested',admin_note=?,updated_at=? WHERE id=?")
+      .bind(newTravelDate, newPickupTime || null, updatedFare, `${customerNote} Amendment fee: ₹${Math.round(amendmentFee)}.`, new Date().toISOString(), row.id).run();
+    const notification = await sendBookingChangeNotification({
+      action: "amendment", bookingId: row.id, customerName: row.customer_name, phone: row.phone,
+      pickup: row.pickup, destination: row.destination, previousTravelDate: row.travel_date,
+      previousPickupTime: row.pickup_time, newTravelDate, newPickupTime, customerNote,
+      charge: amendmentFee, updatedFare,
+    });
+    return NextResponse.json({ success: true, amendmentFee, updatedFare, notificationSent: notification.ok, message: `Amendment requested. ₹${Math.round(amendmentFee)} has been added to the fare. ${notification.ok ? "Vayora has been notified by email." : "The admin panel was updated, but the notification email could not be sent."} Payment instructions will be shared on WhatsApp.` });
   }
   return NextResponse.json({ error: "Invalid action." }, { status: 400 });
 }

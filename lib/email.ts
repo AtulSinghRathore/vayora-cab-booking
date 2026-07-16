@@ -70,6 +70,51 @@ export async function sendBookingNotification(booking: Record<string, unknown>, 
   });
 }
 
+export async function sendBookingChangeNotification(details: {
+  action: "amendment" | "cancellation";
+  bookingId: string;
+  customerName: string;
+  phone: string;
+  pickup: string;
+  destination: string;
+  previousTravelDate: string;
+  previousPickupTime?: string | null;
+  newTravelDate?: string;
+  newPickupTime?: string | null;
+  customerNote?: string;
+  charge: number;
+  updatedFare?: number;
+  deleteAfter?: string;
+}) {
+  const isCancellation = details.action === "cancellation";
+  const rows: Array<[string, unknown]> = [
+    ["Booking ID", details.bookingId],
+    ["Customer", details.customerName],
+    ["Phone", details.phone],
+    ["Route", `${details.pickup} to ${details.destination}`],
+    ["Original travel date", details.previousTravelDate],
+    ["Original pickup time", details.previousPickupTime || "Not provided"],
+  ];
+  if (!isCancellation) {
+    rows.push(
+      ["Requested travel date", details.newTravelDate || details.previousTravelDate],
+      ["Requested pickup time", details.newPickupTime || details.previousPickupTime || "Not provided"],
+      ["Requested change", details.customerNote || "No additional note"],
+      ["Amendment fee", `₹${Math.round(details.charge)}`],
+      ["Updated estimated fare", `₹${Math.round(details.updatedFare || 0)}`],
+    );
+  } else {
+    rows.push(["Cancellation fee", `₹${Math.round(details.charge)}`]);
+  }
+  const retention = details.deleteAfter
+    ? `<p style="margin-top:22px;color:#555">Retention reminder: delete the original booking email and identity attachment by <strong>${escapeHtml(new Date(details.deleteAfter).toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric", timeZone: "Asia/Kolkata" }))}</strong>.</p>`
+    : "";
+  return send({
+    subject: `${isCancellation ? "Cancellation" : "Amendment"} ${details.bookingId}: ${details.pickup} to ${details.destination}`,
+    html: `<div style="font-family:Arial,sans-serif;max-width:680px;margin:auto"><h2>${isCancellation ? "Booking cancelled by customer" : "Customer requested a booking amendment"}</h2><p>${isCancellation ? "The booking has been cancelled in the admin panel. Process any applicable refund manually through the payment channel shared on WhatsApp." : `Review the requested change in the admin panel. The ₹${Math.round(details.charge)} amendment charge is included in the updated fare; share payment instructions on WhatsApp.`}</p><table style="width:100%;border-collapse:collapse">${rows.map(([label, value]) => `<tr><td style="padding:9px;border-bottom:1px solid #ddd;font-weight:bold">${escapeHtml(label)}</td><td style="padding:9px;border-bottom:1px solid #ddd">${escapeHtml(value)}</td></tr>`).join("")}</table>${retention}</div>`,
+  });
+}
+
 export async function sendDeletionReminder(details: { bookingId: string; status: string; deleteAfter: string; route?: string }) {
   const dueDate = new Date(details.deleteAfter).toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric", timeZone: "Asia/Kolkata" });
   return send({

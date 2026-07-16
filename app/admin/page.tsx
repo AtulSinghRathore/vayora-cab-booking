@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import Brand from "../../components/Brand";
 import StatusMessage, { type StatusTone } from "../../components/StatusMessage";
 
@@ -21,7 +22,8 @@ type Booking = {
   delete_after: string | null;
 };
 
-const defaultProperties = `booking.fee=99
+const defaultProperties = `currency=INR
+booking.fee=99
 vehicle.go.baseDayFare=1300
 vehicle.plus.baseDayFare=1600
 vehicle.xl.baseDayFare=2200
@@ -41,7 +43,77 @@ airport.go.perKm=13
 airport.plus.perKm=15
 airport.xl.perKm=20
 airport.waiting.freeMinutes=30
-airport.waiting.perHour=200`;
+airport.waiting.perHour=200
+amendment.fee=25
+cancellation.freeBeforeDays=7
+cancellation.withinWeek.percent=10
+cancellation.withinWeek.maximum=500
+cancellation.within48Hours.percent=20
+cancellation.within48Hours.maximum=1000`;
+
+type FareField = { key: string; label: string; help: string; prefix?: string; suffix?: string; step?: string; fallback: string };
+const fareSections: Array<{ title: string; description: string; fields: FareField[] }> = [
+  { title: "General charges", description: "Charges applied to every standard outstation estimate.", fields: [
+    { key: "booking.fee", label: "Booking and support fee", help: "Fixed coordination charge added once per booking.", prefix: "₹", fallback: "99" },
+    { key: "gst.percent", label: "GST rate", help: "Tax percentage applied to the taxable fare.", suffix: "%", fallback: "5" },
+  ] },
+  { title: "Vayora Go", description: "Standard sedan pricing for outstation trips.", fields: [
+    { key: "vehicle.go.baseDayFare", label: "Full-day cab charge", help: "Fixed charge for each booked day.", prefix: "₹", suffix: "/day", fallback: "1300" },
+    { key: "vehicle.go.perKm", label: "Running charge", help: "Fuel and distance rate for every billable kilometre.", prefix: "₹", suffix: "/km", fallback: "13" },
+  ] },
+  { title: "Vayora Plus", description: "Premium sedan pricing for outstation trips.", fields: [
+    { key: "vehicle.plus.baseDayFare", label: "Full-day cab charge", help: "Fixed charge for each booked day.", prefix: "₹", suffix: "/day", fallback: "1600" },
+    { key: "vehicle.plus.perKm", label: "Running charge", help: "Fuel and distance rate for every billable kilometre.", prefix: "₹", suffix: "/km", fallback: "15" },
+  ] },
+  { title: "Vayora XL", description: "Large vehicle pricing for outstation trips.", fields: [
+    { key: "vehicle.xl.baseDayFare", label: "Full-day cab charge", help: "Fixed charge for each booked day.", prefix: "₹", suffix: "/day", fallback: "2200" },
+    { key: "vehicle.xl.perKm", label: "Running charge", help: "Fuel and distance rate for every billable kilometre.", prefix: "₹", suffix: "/km", fallback: "20" },
+  ] },
+  { title: "Driver charges", description: "Daily and overnight support paid for the driver.", fields: [
+    { key: "driver.dayAllowance", label: "Driver daily allowance", help: "Added for each travel day.", prefix: "₹", suffix: "/day", fallback: "350" },
+    { key: "driver.overnightStay", label: "Driver overnight stay", help: "Added for every overnight stay entered by the customer.", prefix: "₹", suffix: "/night", fallback: "800" },
+  ] },
+  { title: "Airport transfers", description: "Independent pricing for Ranchi and Kolkata airport bookings.", fields: [
+    { key: "airport.bookingFee", label: "Airport coordination fee", help: "Flight-detail handling, scheduling and pickup coordination.", prefix: "₹", fallback: "149" },
+    { key: "airport.go.baseFare", label: "Go base fare", help: "Fixed airport-trip charge for Vayora Go.", prefix: "₹", fallback: "1300" },
+    { key: "airport.go.perKm", label: "Go running charge", help: "Per-kilometre airport rate for Vayora Go.", prefix: "₹", suffix: "/km", fallback: "13" },
+    { key: "airport.plus.baseFare", label: "Plus base fare", help: "Fixed airport-trip charge for Vayora Plus.", prefix: "₹", fallback: "1600" },
+    { key: "airport.plus.perKm", label: "Plus running charge", help: "Per-kilometre airport rate for Vayora Plus.", prefix: "₹", suffix: "/km", fallback: "15" },
+    { key: "airport.xl.baseFare", label: "XL base fare", help: "Fixed airport-trip charge for Vayora XL.", prefix: "₹", fallback: "2200" },
+    { key: "airport.xl.perKm", label: "XL running charge", help: "Per-kilometre airport rate for Vayora XL.", prefix: "₹", suffix: "/km", fallback: "20" },
+    { key: "airport.waiting.freeMinutes", label: "Free airport waiting", help: "Waiting time included before hourly charges start.", suffix: "minutes", fallback: "30" },
+    { key: "airport.waiting.perHour", label: "Extra waiting charge", help: "Charged after the free waiting period.", prefix: "₹", suffix: "/hour", fallback: "200" },
+  ] },
+  { title: "Amendments and cancellations", description: "Customer change fee and cancellation rules used automatically.", fields: [
+    { key: "amendment.fee", label: "Amendment fee", help: "Added each time a customer submits a booking change.", prefix: "₹", fallback: "25" },
+    { key: "cancellation.freeBeforeDays", label: "Free cancellation period", help: "No cancellation fee when this many or more days remain.", suffix: "days", fallback: "7" },
+    { key: "cancellation.withinWeek.percent", label: "Cancellation rate within one week", help: "Percentage charged after the free period and before the final 48 hours.", suffix: "%", fallback: "10" },
+    { key: "cancellation.withinWeek.maximum", label: "Maximum fee within one week", help: "The cancellation charge cannot exceed this amount.", prefix: "₹", fallback: "500" },
+    { key: "cancellation.within48Hours.percent", label: "Cancellation rate within 48 hours", help: "Percentage charged for last-minute cancellations.", suffix: "%", fallback: "20" },
+    { key: "cancellation.within48Hours.maximum", label: "Maximum fee within 48 hours", help: "The last-minute cancellation charge cannot exceed this amount.", prefix: "₹", fallback: "1000" },
+  ] },
+  { title: "Distance estimation", description: "Advanced values used to estimate road distance from map coordinates.", fields: [
+    { key: "distance.roadFactor", label: "Road-distance multiplier", help: "Converts straight-line distance into an estimated road distance.", step: "0.01", suffix: "×", fallback: "1.18" },
+    { key: "distance.minimumKm", label: "Minimum billable distance", help: "Lowest distance used in a fare estimate.", suffix: "km", fallback: "20" },
+  ] },
+];
+
+function readProperty(source: string, field: FareField) {
+  const values = source.split(/\r?\n/).reduce<Record<string, string>>((result, line) => {
+    const separator = line.indexOf("=");
+    if (separator > 0 && !line.trim().startsWith("#")) result[line.slice(0, separator).trim()] = line.slice(separator + 1).trim();
+    return result;
+  }, {});
+  return values[field.key] ?? field.fallback;
+}
+
+function writeProperty(source: string, key: string, value: string) {
+  const lines = source.split(/\r?\n/);
+  const index = lines.findIndex((line) => line.trim().startsWith(`${key}=`));
+  if (index >= 0) lines[index] = `${key}=${value}`;
+  else lines.push(`${key}=${value}`);
+  return lines.join("\n").trim();
+}
 
 const terminalStatuses = new Set(["completed", "cancelled", "rejected"]);
 type Diagnostics = { email: { apiKeyConfigured: boolean; fromEmail: string; notificationEmail: string }; databaseConfigured: boolean };
@@ -88,7 +160,8 @@ export default function AdminPage() {
   useEffect(() => {
     if (!token) return;
     const timer = window.setTimeout(() => void load(token), 0);
-    return () => window.clearTimeout(timer);
+    const refresh = window.setInterval(() => void load(token), 30000);
+    return () => { window.clearTimeout(timer); window.clearInterval(refresh); };
   }, [load, token]);
 
   async function login(event: FormEvent<HTMLFormElement>) {
@@ -172,7 +245,7 @@ export default function AdminPage() {
     return (
       <main className="portal-page">
         <section className="admin-login">
-          <Brand />
+          <Brand href="/" />
           <p className="eyebrow">Private administration</p>
           <h1>Admin sign in</h1>
           <form className="lookup-card" onSubmit={login}>
@@ -189,12 +262,12 @@ export default function AdminPage() {
 
   return (
     <main className="admin-page">
-      <header className="admin-header"><Brand name="Vayora Admin" /><button onClick={signOut}>Sign out</button></header>
+      <header className="admin-header"><Brand href="/" name="Vayora Admin" /><div className="admin-header-actions"><Link href="/">Back to website</Link><button onClick={signOut}>Sign out</button></div></header>
       <div className="admin-tabs">
         {(["requests", "calendar", "fares", "system"] as const).map((item) => (
           <button className={tab === item ? "active" : ""} onClick={() => setTab(item)} key={item}>
             {item[0].toUpperCase() + item.slice(1)}
-            {item === "requests" && <span>{bookings.filter((booking) => booking.status === "pending").length}</span>}
+            {item === "requests" && <span>{bookings.filter((booking) => ["pending", "amendment_requested"].includes(booking.status)).length}</span>}
           </button>
         ))}
       </div>
@@ -210,6 +283,7 @@ export default function AdminPage() {
               </div>
               <p>{booking.customer_name} · {booking.phone} · {booking.travel_date} {booking.pickup_time}</p>
               <p>{booking.vehicle} · ₹{Number(booking.fare_total).toLocaleString("en-IN")}</p>
+              <a className="whatsapp-link" href={`https://wa.me/${booking.phone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer">Message customer on WhatsApp ↗</a>
               <p className={`retention-reminder ${terminalStatuses.has(booking.status) ? "due" : "active"}`}>
                 {terminalStatuses.has(booking.status)
                   ? `Delete the original Aadhaar email by ${booking.delete_after ? new Date(booking.delete_after).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "seven days after this decision"}.`
@@ -240,10 +314,19 @@ export default function AdminPage() {
       )}
 
       {tab === "fares" && (
-        <section className="fare-editor">
-          <div><p className="eyebrow">Live configuration</p><h2>Fare properties</h2><p>Edit every fare in one place. Saving creates a live database override; the property file remains the safe default.</p></div>
-          <textarea value={properties} onChange={(event) => setProperties(event.target.value)} spellCheck={false} />
-          <button className="primary-button" onClick={saveFares}>Save and publish fares</button>
+        <section className="fare-editor-friendly">
+          <div className="fare-editor-intro"><p className="eyebrow">Simple price controls</p><h2>Update fares without touching code</h2><p>Change only the amount you need. Each field explains where it appears in the customer estimate.</p></div>
+          <div className="fare-section-list">
+            {fareSections.map((section) => <section className="fare-section-card" key={section.title}>
+              <div><h3>{section.title}</h3><p>{section.description}</p></div>
+              <div className="fare-field-grid">{section.fields.map((field) => <label className="fare-field" key={field.key}>
+                <span>{field.label}</span><small>{field.help}</small>
+                <div className="fare-input-wrap">{field.prefix && <b>{field.prefix}</b>}<input type="number" min="0" step={field.step || "1"} value={readProperty(properties, field)} onChange={(event) => setProperties((current) => writeProperty(current, field.key, event.target.value))} />{field.suffix && <em>{field.suffix}</em>}</div>
+              </label>)}</div>
+            </section>)}
+          </div>
+          <details className="advanced-properties"><summary>Advanced: view the property file</summary><p>This is the same configuration in developer format. Use the simple fields above unless you know these property names.</p><textarea value={properties} onChange={(event) => setProperties(event.target.value)} spellCheck={false} /></details>
+          <div className="fare-save-bar"><span>Changes become active immediately after saving.</span><button className="primary-button" onClick={saveFares}>Save and publish fares</button></div>
         </section>
       )}
 

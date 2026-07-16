@@ -16,7 +16,7 @@ export type FareConfig = {
     within48HoursPercent: number;
     maximumWithinWeek: number;
     maximumWithin48Hours: number;
-    dateChangeFee: number;
+    amendmentFee: number;
   };
   airport: {
     bookingFee: number;
@@ -37,7 +37,7 @@ export const defaultFareConfig: FareConfig = {
   roadFactor: 1.18,
   minimumDistanceKm: 20,
   taxPercent: 5,
-  cancellation: { freeBeforeDays: 7, withinWeekPercent: 10, within48HoursPercent: 20, maximumWithinWeek: 500, maximumWithin48Hours: 1000, dateChangeFee: 250 },
+  cancellation: { freeBeforeDays: 7, withinWeekPercent: 10, within48HoursPercent: 20, maximumWithinWeek: 500, maximumWithin48Hours: 1000, amendmentFee: 25 },
   airport: {
     bookingFee: 149,
     baseFare: { go: 1300, plus: 1600, xl: 2200 },
@@ -86,7 +86,7 @@ export function parseFareProperties(source: string): FareConfig {
       within48HoursPercent: toNumber(properties, "cancellation.within48Hours.percent", defaultFareConfig.cancellation.within48HoursPercent),
       maximumWithinWeek: toNumber(properties, "cancellation.withinWeek.maximum", defaultFareConfig.cancellation.maximumWithinWeek),
       maximumWithin48Hours: toNumber(properties, "cancellation.within48Hours.maximum", defaultFareConfig.cancellation.maximumWithin48Hours),
-      dateChangeFee: toNumber(properties, "amendment.dateChangeFee", defaultFareConfig.cancellation.dateChangeFee),
+      amendmentFee: toNumber(properties, "amendment.fee", defaultFareConfig.cancellation.amendmentFee),
     },
     airport: {
       bookingFee: toNumber(properties, "airport.bookingFee", defaultFareConfig.airport.bookingFee),
