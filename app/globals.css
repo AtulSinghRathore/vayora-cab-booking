@@ -208,7 +208,7 @@ a {
 
 .hero-photo {
   position: absolute;
-  z-index: -3;
+  z-index: 0;
   top: 0;
   right: 0;
   width: 58%;
@@ -221,7 +221,7 @@ a {
 
 .hero-shade {
   position: absolute;
-  z-index: -2;
+  z-index: 1;
   inset: 0;
   background:
     linear-gradient(90deg, var(--cream) 0%, var(--cream) 38%, rgba(255, 248, 236, 0.94) 49%, rgba(255, 248, 236, 0.14) 76%),
@@ -229,6 +229,8 @@ a {
 }
 
 .hero-content {
+  position: relative;
+  z-index: 3;
   width: min(1380px, 100%);
   min-height: calc(100svh - 82px);
   margin: 0 auto;
@@ -665,7 +667,7 @@ h1 span {
 
 .route-art {
   position: absolute;
-  z-index: -1;
+  z-index: 2;
   top: 10%;
   left: 47%;
   width: 280px;
