@@ -404,9 +404,9 @@ export default function AdminPage() {
           <Brand href="/" />
           <p className="eyebrow">Private administration</p>
           <h1>Admin sign in</h1>
-          <form className="lookup-card" onSubmit={login}>
-            <label><span>Admin email</span><input name="email" type="email" autoComplete="username" required /></label>
-            <label><span>Password</span><input name="password" type="password" autoComplete="current-password" required /></label>
+          <form className="lookup-card" onSubmit={login} autoComplete="off">
+            <label><span>Admin email</span><input name="email" type="email" autoComplete="off" required /></label>
+            <label><span>Password</span><input name="password" type="password" autoComplete="new-password" required /></label>
             <button className="primary-button">Sign in securely</button>
           </form>
           <StatusMessage tone={messageTone}>{message}</StatusMessage>
