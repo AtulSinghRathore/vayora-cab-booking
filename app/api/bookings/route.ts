@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createBookingId, ensureSchema, getDatabase, getDocuments } from "../../../lib/platform";
+import { cleanupExpiredDocuments, createBookingId, ensureSchema, getDatabase, getDocuments } from "../../../lib/platform";
 import { defaultFareConfig, parseFareProperties } from "../../../lib/fare-config";
 
 const notificationEmail = process.env.BOOKING_NOTIFICATION_EMAIL || "natul0636@gmail.com";
@@ -53,6 +53,7 @@ export async function POST(request: NextRequest) {
   if (!db || !bucket) return NextResponse.json({ error: "Secure booking storage is being connected. Please call us to book meanwhile." }, { status: 503 });
 
   await ensureSchema(db);
+  await cleanupExpiredDocuments(db, bucket);
   const extension = document.type === "application/pdf" ? "pdf" : document.type === "image/png" ? "png" : "jpg";
   const documentKey = `identity/${id}.${extension}`;
   await bucket.put(documentKey, await document.arrayBuffer(), { httpMetadata: { contentType: document.type }, customMetadata: { bookingId: id, deleteAfter: deletionDate.toISOString() } });
@@ -71,6 +72,7 @@ export async function GET(request: NextRequest) {
   const db = getDatabase();
   if (!db) return NextResponse.json({ error: "Booking lookup is not connected yet." }, { status: 503 });
   await ensureSchema(db);
+  const bucket = getDocuments(); if (bucket) await cleanupExpiredDocuments(db, bucket);
   const row = await db.prepare("SELECT id,pickup,destination,travel_date,pickup_time,trip_type,vehicle,fare_total,status,driver_name,driver_phone,admin_note,created_at FROM bookings WHERE id=? AND REPLACE(REPLACE(REPLACE(phone,'+',''),' ',''),'-','') LIKE ?")
     .bind(id, `%${phone.slice(-10)}`).first();
   return row ? NextResponse.json(row) : NextResponse.json({ error: "No booking matched those details." }, { status: 404 });
@@ -93,7 +95,8 @@ export async function PATCH(request: NextRequest) {
     const cancellationFee = daysBefore >= config.cancellation.freeBeforeDays ? 0 : daysBefore >= 2
       ? Math.min(config.cancellation.maximumWithinWeek, Number(row.fare_total) * config.cancellation.withinWeekPercent / 100)
       : Math.min(config.cancellation.maximumWithin48Hours, Number(row.fare_total) * config.cancellation.within48HoursPercent / 100);
-    await db.prepare("UPDATE bookings SET status='cancelled',cancelled_at=?,updated_at=?,admin_note=? WHERE id=?").bind(new Date().toISOString(), new Date().toISOString(), `Customer cancellation. Indicative fee: ₹${Math.round(cancellationFee)}`, row.id).run();
+    const cancelledAt = new Date(); const deleteAfter = new Date(cancelledAt); deleteAfter.setDate(deleteAfter.getDate() + 7);
+    await db.prepare("UPDATE bookings SET status='cancelled',cancelled_at=?,document_delete_after=?,updated_at=?,admin_note=? WHERE id=?").bind(cancelledAt.toISOString(), deleteAfter.toISOString(), cancelledAt.toISOString(), `Customer cancellation. Indicative fee: ₹${Math.round(cancellationFee)}`, row.id).run();
     return NextResponse.json({ success: true, cancellationFee, message: cancellationFee ? `Cancellation recorded. Applicable fee: ₹${Math.round(cancellationFee)}.` : "Booking cancelled with no fee." });
   }
   if (action === "amend") {

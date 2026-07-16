@@ -10,6 +10,19 @@ Vayora is a responsive cab-booking website for trips starting in Jamshedpur and 
 - Transparent fare breakdown before booking
 - Customer booking form that sends ride details to the business email
 - Responsive desktop and mobile design
+- Dedicated Ranchi and Kolkata airport booking
+- Private identity-document upload with seven-day retention after travel/cancellation
+- Booking ID lookup, amendments and configurable cancellation fees
+- Password-protected admin approval, driver assignment, calendar and live fare editor
+
+## Cloudflare production services
+
+The complete workflow uses Cloudflare's free allowances. Create and bind:
+
+- A **D1 database** with binding name `DB`
+- An **R2 bucket** with binding name `DOCUMENTS`
+
+The application creates its tables on first use. Identity documents are never attached to email. Expired documents are removed during booking/admin activity after their seven-day retention deadline.
 
 ## Configure fares
 
@@ -53,6 +66,9 @@ RESEND_API_KEY=your_api_key
 BOOKING_FROM_EMAIL=Vayora Bookings <onboarding@resend.dev>
 BOOKING_NOTIFICATION_EMAIL=natul0636@gmail.com
 BOOKING_PHONE=+919304591415
+ADMIN_EMAIL=natul0636@gmail.com
+ADMIN_PASSWORD=choose_a_strong_password
+ADMIN_SESSION_SECRET=generate_a_long_random_secret
 ```
 
 Never commit the real API key. `.env.example` contains only safe placeholders.

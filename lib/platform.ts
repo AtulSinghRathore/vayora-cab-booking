@@ -43,6 +43,16 @@ export function createBookingId() {
   return `VAY-${date}-${random}`;
 }
 
+export async function cleanupExpiredDocuments(db: D1Database, bucket: R2Bucket) {
+  await ensureSchema(db);
+  const expired = await db.prepare("SELECT id,document_key FROM bookings WHERE document_key IS NOT NULL AND document_delete_after <= ? LIMIT 50")
+    .bind(new Date().toISOString()).all<{ id: string; document_key: string }>();
+  for (const row of expired.results || []) {
+    await bucket.delete(row.document_key);
+    await db.prepare("UPDATE bookings SET document_key=NULL,updated_at=? WHERE id=?").bind(new Date().toISOString(), row.id).run();
+  }
+}
+
 const encoder = new TextEncoder();
 const toBase64Url = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
 
