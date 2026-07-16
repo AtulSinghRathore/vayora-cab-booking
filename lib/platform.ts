@@ -131,6 +131,6 @@ export async function verifyAdmin(request: Request) {
   if (!payload || !suppliedSignature || !secret || await signature(payload, secret) !== suppliedSignature) return false;
   try {
     const parsed = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(payload.replaceAll("-", "+").replaceAll("_", "/")), (c) => c.charCodeAt(0))));
-    return parsed.email === getRuntimeString("ADMIN_EMAIL", "natul0636@gmail.com") && parsed.exp > Date.now();
+    return parsed.email === getRuntimeString("ADMIN_EMAIL", "anupkr9265@gmail.com") && parsed.exp > Date.now();
   } catch { return false; }
 }

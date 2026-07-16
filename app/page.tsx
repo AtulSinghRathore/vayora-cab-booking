@@ -143,7 +143,7 @@ export default function Home() {
       setBookingTone(response.ok ? "success" : "error");
       if (response.ok) setBookingSubmitted(true);
     } catch {
-      setBookingStatus("Unable to send the booking request. Please call +91 93045 91415.");
+      setBookingStatus("Unable to send the booking request. Please call +91 80922 53270 or +91 90068 48822.");
       setBookingTone("error");
     } finally {
       setSubmittingBooking(false);
@@ -164,8 +164,8 @@ export default function Home() {
         </nav>
 
         <div className="header-actions">
-          <a className="phone-link" href="tel:+919304591415">
-            <span aria-hidden="true">●</span> +91 93045 91415
+          <a className="phone-link" href="tel:+918092253270">
+            <span aria-hidden="true">●</span> +91 80922 53270
           </a>
           <a className="login-link" href="/admin">
             Admin
@@ -361,7 +361,7 @@ export default function Home() {
                 </form>
                 <div className="selection-bar" role="status" aria-live="polite">
                   <span><b>{selectedVehicle.name}</b> selected for Jamshedpur → {destination.trim()}</span>
-                  <a href="tel:+919304591415">Call +91 93045 91415 →</a>
+                  <a href="tel:+918092253270">Call +91 80922 53270 →</a>
                 </div>
               </div>
             )}
@@ -484,7 +484,7 @@ export default function Home() {
             <p className="section-kicker">Good to know</p>
             <h2 id="faq-heading">Questions before you go?</h2>
             <p className="faq-lead">Clear answers make for calmer journeys.</p>
-            <a className="support-link" href="tel:+919304591415">Talk to travel support →</a>
+            <a className="support-link" href="tel:+918092253270">Talk to travel support →</a>
           </div>
           <div className="faq-list">
             <details open>
@@ -522,12 +522,13 @@ export default function Home() {
         </div>
         <div>
           <p className="footer-title">Services</p>
-          <a href="#fleet">Outstation</a><a href="#fleet">Local</a><a href="/airport">Airport</a><a href="https://wa.me/919304591415?text=Hello%20Vayora%2C%20I%20would%20like%20to%20discuss%20business%20travel%20or%20a%20corporate%20cab%20arrangement." target="_blank" rel="noreferrer">Business travel</a>
+          <a href="#fleet">Outstation</a><a href="#fleet">Local</a><a href="/airport">Airport</a><a href="https://wa.me/918092253270?text=Hello%20Vayora%2C%20I%20would%20like%20to%20discuss%20business%20travel%20or%20a%20corporate%20cab%20arrangement." target="_blank" rel="noreferrer">Business travel</a>
         </div>
         <div>
           <p className="footer-title">Contact</p>
-          <a href="tel:+919304591415">+91 93045 91415</a>
-          <a href="https://mail.google.com/mail/?view=cm&fs=1&to=natul0636@gmail.com" target="_blank" rel="noreferrer">natul0636@gmail.com</a>
+          <a href="tel:+918092253270">+91 80922 53270</a>
+          <a href="tel:+919006848822">+91 90068 48822</a>
+          <a href="https://mail.google.com/mail/?view=cm&fs=1&to=anupkr9265@gmail.com" target="_blank" rel="noreferrer">anupkr9265@gmail.com</a>
           <span>Jamshedpur, Jharkhand</span>
         </div>
         <div className="footer-bottom">

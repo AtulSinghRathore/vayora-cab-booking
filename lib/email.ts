@@ -8,7 +8,7 @@ export function getEmailConfiguration() {
   return {
     apiKeyConfigured: Boolean(getRuntimeString("RESEND_API_KEY")),
     fromEmail: getRuntimeString("BOOKING_FROM_EMAIL", "Vayora Bookings <onboarding@resend.dev>"),
-    notificationEmail: getRuntimeString("BOOKING_NOTIFICATION_EMAIL", "natul0636@gmail.com"),
+    notificationEmail: getRuntimeString("BOOKING_NOTIFICATION_EMAIL", "anupkr9265@gmail.com"),
   };
 }
 
@@ -51,7 +51,10 @@ async function send(payload: Record<string, unknown>): Promise<EmailResult> {
 }
 
 export async function sendBookingNotification(booking: Record<string, unknown>, bookingId: string, document: File) {
-  const businessPhone = getRuntimeString("BOOKING_PHONE", "+919304591415");
+  const businessPhones = [
+    getRuntimeString("BOOKING_PHONE", "+918092253270"),
+    getRuntimeString("BOOKING_PHONE_ALT", "+919006848822"),
+  ].filter(Boolean).join(" / ");
   const rows = [
     ["Request ID", bookingId], ["Customer", booking.name], ["Phone", booking.phone], ["Email", booking.email || "Not provided"],
     ["Pickup", booking.pickup], ["Destination", booking.destination], ["Travel date", booking.travelDate], ["Pickup time", booking.pickupTime],
@@ -65,7 +68,7 @@ export async function sendBookingNotification(booking: Record<string, unknown>, 
   return send({
     reply_to: booking.email || undefined,
     subject: `Vayora request ${bookingId}: ${booking.pickup} to ${booking.destination}`,
-    html: `<div style="font-family:Arial,sans-serif;max-width:680px;margin:auto"><h2>New Vayora booking request</h2><p>Review and approve this request in the admin panel. Contact: ${escapeHtml(businessPhone)}</p><table style="width:100%;border-collapse:collapse">${rows.map(([label, value]) => `<tr><td style="padding:9px;border-bottom:1px solid #ddd;font-weight:bold">${escapeHtml(label)}</td><td style="padding:9px;border-bottom:1px solid #ddd">${escapeHtml(value)}</td></tr>`).join("")}</table><p style="margin-top:22px;color:#555">Retention reminder: delete this email and its identity attachment within seven days after this booking is completed, cancelled or rejected.</p></div>`,
+    html: `<div style="font-family:Arial,sans-serif;max-width:680px;margin:auto"><h2>New Vayora booking request</h2><p>Review and approve this request in the admin panel. Contact: ${escapeHtml(businessPhones)}</p><table style="width:100%;border-collapse:collapse">${rows.map(([label, value]) => `<tr><td style="padding:9px;border-bottom:1px solid #ddd;font-weight:bold">${escapeHtml(label)}</td><td style="padding:9px;border-bottom:1px solid #ddd">${escapeHtml(value)}</td></tr>`).join("")}</table><p style="margin-top:22px;color:#555">Retention reminder: delete this email and its identity attachment within seven days after this booking is completed, cancelled or rejected.</p></div>`,
     attachments: [{ filename, content: fileToBase64(new Uint8Array(await document.arrayBuffer())) }],
   });
 }

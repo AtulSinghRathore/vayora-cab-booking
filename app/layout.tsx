@@ -51,7 +51,7 @@ export default function RootLayout({
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
           "@context": "https://schema.org", "@type": ["TaxiService", "LocalBusiness"], name: "Vayora Cabs",
           description: "Outstation and airport cab booking from Jamshedpur to destinations across India.",
-          telephone: "+91-93045-91415", email: "natul0636@gmail.com", areaServed: ["Jamshedpur", "Jharkhand", "India"],
+          telephone: ["+91-80922-53270", "+91-90068-48822"], email: "anupkr9265@gmail.com", areaServed: ["Jamshedpur", "Jharkhand", "India"],
           address: { "@type": "PostalAddress", addressLocality: "Jamshedpur", addressRegion: "Jharkhand", addressCountry: "IN" },
           url: process.env.NEXT_PUBLIC_SITE_URL || "https://vayora.anup-travels.workers.dev",
         }) }} />

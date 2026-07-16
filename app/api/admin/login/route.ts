@@ -3,7 +3,7 @@ import { getRuntimeString, issueAdminToken } from "../../../../lib/platform";
 
 export async function POST(request: NextRequest) {
   const { email, password } = await request.json();
-  const adminEmail = getRuntimeString("ADMIN_EMAIL", "natul0636@gmail.com");
+  const adminEmail = getRuntimeString("ADMIN_EMAIL", "anupkr9265@gmail.com");
   const adminPassword = getRuntimeString("ADMIN_PASSWORD");
   const sessionSecret = getRuntimeString("ADMIN_SESSION_SECRET");
   if (!adminPassword || !sessionSecret) {

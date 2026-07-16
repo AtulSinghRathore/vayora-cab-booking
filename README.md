@@ -65,9 +65,10 @@ Create a [Resend](https://resend.com) account and configure these secrets and va
 ```text
 RESEND_API_KEY=your_api_key
 BOOKING_FROM_EMAIL=Vayora Bookings <onboarding@resend.dev>
-BOOKING_NOTIFICATION_EMAIL=natul0636@gmail.com
-BOOKING_PHONE=+919304591415
-ADMIN_EMAIL=natul0636@gmail.com
+BOOKING_NOTIFICATION_EMAIL=anupkr9265@gmail.com
+BOOKING_PHONE=+918092253270
+BOOKING_PHONE_ALT=+919006848822
+ADMIN_EMAIL=anupkr9265@gmail.com
 ADMIN_PASSWORD=choose_a_strong_password
 ADMIN_SESSION_SECRET=generate_a_long_random_secret
 ```

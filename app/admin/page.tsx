@@ -354,7 +354,7 @@ export default function AdminPage() {
       const pages = doc.getNumberOfPages();
       for (let page = 1; page <= pages; page += 1) {
         doc.setPage(page); doc.setDrawColor(218, 225, 221); doc.line(15, 284, 195, 284);
-        doc.setFontSize(7.5); doc.setTextColor(96, 108, 101); doc.text("Vayora Cabs · Jamshedpur, Jharkhand · +91 93045 91415 · natul0636@gmail.com", 15, 289);
+        doc.setFontSize(6.8); doc.setTextColor(96, 108, 101); doc.text("Vayora Cabs · Jamshedpur · +91 80922 53270 / +91 90068 48822 · anupkr9265@gmail.com", 15, 289);
         doc.text(`Page ${page} of ${pages}`, 195, 289, { align: "right" });
       }
       doc.save(`Vayora-${billBooking.id}-Trip-Fare-Statement.pdf`);
@@ -405,7 +405,7 @@ export default function AdminPage() {
           <p className="eyebrow">Private administration</p>
           <h1>Admin sign in</h1>
           <form className="lookup-card" onSubmit={login}>
-            <label><span>Admin email</span><input name="email" type="email" defaultValue="natul0636@gmail.com" required /></label>
+            <label><span>Admin email</span><input name="email" type="email" defaultValue="anupkr9265@gmail.com" required /></label>
             <label><span>Password</span><input name="password" type="password" required /></label>
             <button className="primary-button">Sign in securely</button>
           </form>

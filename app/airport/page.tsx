@@ -141,7 +141,7 @@ export default function AirportPage() {
       setBookingTone(response.ok ? "success" : "error");
       if (response.ok) setBookingSubmitted(true);
     } catch {
-      setBookingStatus("Unable to send the request. Please call +91 93045 91415.");
+      setBookingStatus("Unable to send the request. Please call +91 80922 53270 or +91 90068 48822.");
       setBookingTone("error");
     } finally {
       setSubmitting(false);
@@ -153,7 +153,7 @@ export default function AirportPage() {
       <header className="site-header">
         <Brand />
         <nav className="desktop-nav" aria-label="Main navigation"><Link href="/#book">Outstation</Link><Link className="active" href="/airport">Airport</Link><Link href="/booking">Find booking</Link></nav>
-        <div className="header-actions"><a className="phone-link" href="tel:+919304591415"><span>●</span> +91 93045 91415</a><Link className="login-link" href="/admin">Admin</Link></div>
+        <div className="header-actions"><a className="phone-link" href="tel:+918092253270"><span>●</span> +91 80922 53270</a><Link className="login-link" href="/admin">Admin</Link></div>
       </header>
 
       <section className="airport-hero">
@@ -238,7 +238,7 @@ export default function AirportPage() {
         </section>
       )}
 
-      <footer className="airport-footer"><div className="footer-brand"><Brand className="footer-logo" /><p>Airport transfers for Ranchi and Kolkata.</p></div><div><p className="footer-title">Contact</p><a href="tel:+919304591415">+91 93045 91415</a><a href="https://mail.google.com/mail/?view=cm&fs=1&to=natul0636@gmail.com" target="_blank" rel="noreferrer">natul0636@gmail.com</a></div></footer>
+      <footer className="airport-footer"><div className="footer-brand"><Brand className="footer-logo" /><p>Airport transfers for Ranchi and Kolkata.</p></div><div><p className="footer-title">Contact</p><a href="tel:+918092253270">+91 80922 53270</a><a href="tel:+919006848822">+91 90068 48822</a><a href="https://mail.google.com/mail/?view=cm&fs=1&to=anupkr9265@gmail.com" target="_blank" rel="noreferrer">anupkr9265@gmail.com</a></div></footer>
     </main>
   );
 }
