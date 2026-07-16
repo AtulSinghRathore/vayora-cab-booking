@@ -1,0 +1,12 @@
+{
+  "name": "Vayora Cabs",
+  "short_name": "Vayora",
+  "description": "Safe outstation and airport cab booking from Jamshedpur.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fff8ec",
+  "theme_color": "#184f3a",
+  "icons": [
+    { "src": "/vayora-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

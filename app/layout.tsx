@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -12,6 +12,13 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: "#184f3a",
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://vayora.anup-travels.workers.dev"),
   title: { default: "Vayora Cabs | Jamshedpur Outstation & Airport Taxi", template: "%s | Vayora Cabs" },
@@ -24,9 +31,11 @@ export const metadata: Metadata = {
     "codex-preview": "development",
   },
   icons: {
-    icon: "/favicon.svg",
-    shortcut: "/favicon.svg",
+    icon: [{ url: "/vayora-icon.svg", type: "image/svg+xml" }],
+    shortcut: "/vayora-icon.svg",
+    apple: "/vayora-icon.svg",
   },
+  manifest: "/site.webmanifest",
 };
 
 export default function RootLayout({
