@@ -27,6 +27,9 @@ export const metadata: Metadata = {
   description: "Book safe outstation and airport cabs from Jamshedpur to Ranchi, Kolkata and cities across India. Transparent fares, verified drivers and direct support.",
   keywords: ["cab booking Jamshedpur", "Jamshedpur outstation cab", "Jamshedpur to Ranchi taxi", "Jamshedpur to Kolkata cab", "Ranchi airport cab from Jamshedpur"],
   alternates: { canonical: siteUrl },
+  verification: {
+    google: "G83PkA8yDbhiMAPc9tOdkgoQNA0SW5Y9re-RD9xcCc8",
+  },
   openGraph: {
     title: "Vayora Cabs from Jamshedpur",
     description: "Safe outstation and airport journeys with clear fares and caring support.",
