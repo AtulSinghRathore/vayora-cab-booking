@@ -45,8 +45,8 @@ export default function AirportPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    fetch("/config/fare.properties")
-      .then((response) => response.text())
+    fetch("/api/fares")
+      .then((response) => response.ok ? response.text() : fetch("/config/fare.properties").then((fallback) => fallback.text()))
       .then((source) => setFareConfig(parseFareProperties(source)))
       .catch(() => setFareConfig(defaultFareConfig));
   }, []);
@@ -116,10 +116,7 @@ export default function AirportPage() {
     setSubmitting(true);
     setBookingStatus("");
     try {
-      const response = await fetch("/api/bookings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const booking = {
           name: form.get("name"), phone: form.get("phone"), email: form.get("email"),
           pickup: pickupLabel, destination: destinationLabel, travelDate, pickupTime,
           tripType: direction === "to-airport" ? "To airport" : "From airport",
@@ -127,8 +124,9 @@ export default function AirportPage() {
           distanceKm: fareBreakdown.billableDistanceKm, fareTotal: fareBreakdown.total,
           airport: `${airport.name} (${airport.code})`, flightNumber: flightNumber || "Not provided",
           passengers, luggage, pickupAddress: form.get("pickupAddress"), note: form.get("note"),
-        }),
-      });
+        };
+      const payload = new FormData(); payload.set("booking", JSON.stringify(booking)); payload.set("identityDocument", form.get("identityDocument") as File);
+      const response = await fetch("/api/bookings", { method: "POST", body: payload });
       const result = await response.json();
       setBookingStatus(result.message || result.error || "Unable to send the airport booking request.");
     } catch {
@@ -142,8 +140,8 @@ export default function AirportPage() {
     <main className="airport-page">
       <header className="site-header">
         <Link className="brand" href="/" aria-label="Vayora home"><span className="brand-mark">V</span><span>Vayora</span></Link>
-        <nav className="desktop-nav" aria-label="Main navigation"><Link href="/#book">Outstation</Link><Link className="active" href="/airport">Airport</Link><Link href="/#business">Corporate</Link></nav>
-        <div className="header-actions"><a className="phone-link" href="tel:+919304591415"><span>●</span> +91 93045 91415</a><Link className="login-link" href="/">Home</Link></div>
+        <nav className="desktop-nav" aria-label="Main navigation"><Link href="/#book">Outstation</Link><Link className="active" href="/airport">Airport</Link><Link href="/booking">Find booking</Link></nav>
+        <div className="header-actions"><a className="phone-link" href="tel:+919304591415"><span>●</span> +91 93045 91415</a><Link className="login-link" href="/admin">Admin</Link></div>
       </header>
 
       <section className="airport-hero">
@@ -216,7 +214,9 @@ export default function AirportPage() {
                   <label><span>Full name *</span><input name="name" required /></label><label><span>Mobile number *</span><input name="phone" type="tel" required placeholder="+91" /></label>
                   <label><span>Email</span><input name="email" type="email" /></label><label><span>Exact pickup/drop address *</span><input name="pickupAddress" required /></label>
                   <label className="full-field"><span>Instructions</span><textarea name="note" rows={3} placeholder="Terminal, luggage, stops or accessibility needs" /></label>
+                  <label className="full-field identity-upload"><span>Identity document (Aadhaar or government ID) *</span><input name="identityDocument" type="file" accept="image/jpeg,image/png,application/pdf" required /><small>Normal or masked Aadhaar accepted. No third-party validation. Maximum 5 MB.</small></label>
                 </div>
+                <label className="consent-row"><input type="checkbox" required /><span>I consent to private storage. The document will be deleted seven days after travel or cancellation and will not be emailed.</span></label>
                 <p className="waiting-note">From-airport rides include {fareConfig.airport.freeWaitingMinutes} minutes free waiting. Additional waiting: ₹{fareConfig.airport.waitingPerHour}/hour.</p>
                 <button className="primary-button booking-submit" type="submit" disabled={submitting}>{submitting ? "Sending request…" : `Request booking for ₹${Math.round(fareBreakdown.total).toLocaleString("en-IN")}`}</button>
                 <p className="booking-status" role="status">{bookingStatus}</p>

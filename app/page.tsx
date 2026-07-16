@@ -42,8 +42,8 @@ export default function Home() {
   const [submittingBooking, setSubmittingBooking] = useState(false);
 
   useEffect(() => {
-    fetch("/config/fare.properties")
-      .then((response) => response.text())
+    fetch("/api/fares")
+      .then((response) => response.ok ? response.text() : fetch("/config/fare.properties").then((fallback) => fallback.text()))
       .then((source) => setFareConfig(parseFareProperties(source)))
       .catch(() => setFareConfig(defaultFareConfig));
   }, []);
@@ -119,17 +119,17 @@ export default function Home() {
     setSubmittingBooking(true);
     setBookingStatus("");
     try {
-      const response = await fetch("/api/bookings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const booking = {
           name: form.get("name"), phone: form.get("phone"), email: form.get("email"),
           pickup: form.get("pickup"), destination: selectedCity.displayName,
           travelDate, pickupTime, tripType, vehicle: selectedVehicle.name, days,
           overnightStays, distanceKm: fareBreakdown.billableDistanceKm,
           fareTotal: fareBreakdown.total, note: form.get("note"),
-        }),
-      });
+        };
+      const payload = new FormData();
+      payload.set("booking", JSON.stringify(booking));
+      payload.set("identityDocument", form.get("identityDocument") as File);
+      const response = await fetch("/api/bookings", { method: "POST", body: payload });
       const result = await response.json();
       setBookingStatus(result.message || result.error || "Unable to send the booking request.");
     } catch {
@@ -153,17 +153,16 @@ export default function Home() {
           <a className="active" href="#book">
             Outstation
           </a>
-          <a href="#fleet">Local</a>
           <a href="/airport">Airport</a>
-          <a href="#business">Corporate</a>
+          <a href="/booking">Find booking</a>
         </nav>
 
         <div className="header-actions">
           <a className="phone-link" href="tel:+919304591415">
             <span aria-hidden="true">●</span> +91 93045 91415
           </a>
-          <a className="login-link" href="#account">
-            Sign in
+          <a className="login-link" href="/admin">
+            Admin
           </a>
         </div>
       </header>
@@ -185,8 +184,8 @@ export default function Home() {
             Jamshedpur to <span>anywhere in India.</span>
           </h1>
           <p className="hero-copy">
-            Comfortable cabs, verified drivers and clear pricing—wherever the
-            road takes you.
+            Your safety leads every mile. Comfortable cabs, verified drivers and
+            clear pricing—wherever the road takes you.
           </p>
 
           <form className="booking-card" id="book" onSubmit={checkFares}>
@@ -347,12 +346,14 @@ export default function Home() {
                     <label><span>Email</span><input name="email" type="email" placeholder="you@example.com" /></label>
                     <label><span>Pickup address *</span><input name="pickup" required placeholder="Area or full address in Jamshedpur" /></label>
                     <label className="full-field"><span>Anything we should know?</span><textarea name="note" rows={3} placeholder="Luggage, stops, accessibility needs…" /></label>
+                    <label className="full-field identity-upload"><span>Identity document (Aadhaar or government ID) *</span><input name="identityDocument" type="file" accept="image/jpeg,image/png,application/pdf" required /><small>Normal or masked Aadhaar is accepted. JPG, PNG or PDF, maximum 5 MB. We do not validate it with any third party.</small></label>
                   </div>
+                  <label className="consent-row"><input type="checkbox" required /><span>I consent to private storage of this identity document. It will be deleted seven days after travel or cancellation and will not be attached to email.</span></label>
                   <button className="primary-button booking-submit" type="submit" disabled={submittingBooking}>
                     {submittingBooking ? "Sending request…" : `Request booking for ₹${Math.round(fareBreakdown.total).toLocaleString("en-IN")}`}
                   </button>
                   <p className="booking-status" role="status" aria-live="polite">{bookingStatus}</p>
-                  <p className="privacy-note">Your details are sent only to Vayora booking support at natul0636@gmail.com.</p>
+                  <p className="privacy-note">Your booking details are sent to Vayora support. Your identity document remains in private storage and is never emailed.</p>
                 </form>
                 <div className="selection-bar" role="status" aria-live="polite">
                   <span><b>{selectedVehicle.name}</b> selected for Jamshedpur → {destination.trim()}</span>
@@ -424,7 +425,16 @@ export default function Home() {
               ["Patna", "Door-to-door travel"],
               ["Varanasi", "Family & pilgrimage trips"],
             ].map(([city, description]) => (
-              <a className="route-card" href="#book" key={city}>
+              <a className="route-card" href="#book" key={city} onClick={(event) => {
+                event.preventDefault();
+                setDestination(city);
+                setSelectedCity(null);
+                setNotice("Finding the selected city…");
+                window.setTimeout(() => document.getElementById("book")?.scrollIntoView({ behavior: "smooth" }), 10);
+                fetch(`/api/cities?q=${encodeURIComponent(city)}`).then((response) => response.json()).then((matches: CitySuggestion[]) => {
+                  if (matches[0]) { setSelectedCity(matches[0]); setDestination(matches[0].city); setNotice(""); }
+                });
+              }}>
                 <span className="route-pin" aria-hidden="true">●</span>
                 <div>
                   <h3>Jamshedpur → {city}</h3>
