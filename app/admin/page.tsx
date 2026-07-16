@@ -191,6 +191,12 @@ export default function AdminPage() {
     return () => { window.clearTimeout(timer); window.clearInterval(refresh); };
   }, [load, token]);
 
+  useEffect(() => {
+    if (!message) return;
+    const timer = window.setTimeout(() => setMessage(""), messageTone === "error" ? 9000 : 5000);
+    return () => window.clearTimeout(timer);
+  }, [message, messageTone]);
+
   async function login(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
@@ -277,12 +283,15 @@ export default function AdminPage() {
       if (!await saveBillDraft(false)) throw new Error("The draft could not be saved.");
       const [{ jsPDF }, tableModule] = await Promise.all([import("jspdf"), import("jspdf-autotable")]);
       const doc = new jsPDF();
-      const money = (amount: number) => Number(amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      const drawRupee = (x: number, y: number, inverted = false) => {
-        doc.setDrawColor(inverted ? 255 : 34, inverted ? 255 : 45, inverted ? 255 : 40); doc.setLineWidth(0.22);
-        doc.line(x, y - 1.8, x + 3.1, y - 1.8); doc.line(x, y - 0.65, x + 3.1, y - 0.65);
-        doc.line(x + 0.85, y - 2.45, x + 0.85, y - 0.65); doc.line(x + 0.85, y - 0.65, x + 3.05, y + 1.95);
-      };
+      const fontResponse = await fetch("/fonts/DejaVuSans.ttf");
+      if (!fontResponse.ok) throw new Error("The PDF currency font could not be loaded.");
+      const fontBytes = new Uint8Array(await fontResponse.arrayBuffer());
+      let fontBinary = "";
+      for (let offset = 0; offset < fontBytes.length; offset += 0x8000) fontBinary += String.fromCharCode(...fontBytes.subarray(offset, offset + 0x8000));
+      doc.addFileToVFS("DejaVuSans.ttf", btoa(fontBinary));
+      doc.addFont("DejaVuSans.ttf", "VayoraCurrency", "normal");
+      doc.addFont("DejaVuSans.ttf", "VayoraCurrency", "bold");
+      const money = (amount: number) => `₨ ${Number(amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       doc.setFillColor(24, 79, 58); doc.rect(0, 0, 210, 6, "F");
       doc.roundedRect(15, 14, 17, 17, 3, 3, "F");
       doc.setFillColor(249, 115, 22); doc.rect(27, 14, 5, 17, "F");
@@ -302,27 +311,23 @@ export default function AdminPage() {
       const extraTotal = billExtras.reduce((sum, line) => sum + Number(line.amount || 0), 0);
       const grandTotal = summaryTotal + extraTotal;
       const balance = grandTotal - Number(billBooking.minimum_booking_amount || 0);
-      const amountCell = (columnIndex: number, invertedRow = -1) => (data: Parameters<NonNullable<NonNullable<Parameters<typeof tableModule.default>[1]>["didDrawCell"]>>[0]) => {
-        if (data.section !== "body" || data.column.index !== columnIndex) return;
-        const value = String(data.cell.raw ?? "");
-        const symbolX = data.cell.x + data.cell.width - 5 - doc.getTextWidth(value) - 4.4;
-        drawRupee(symbolX, data.cell.y + data.cell.height / 2 + 0.25, data.row.index === invertedRow);
-      };
       tableModule.default(doc, {
         startY: (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6, margin: { left: 15, right: 15 },
         head: [["Fare description", "Amount (INR)"]],
         body: [...billLines.map((line) => [line.label, money(line.amount)]), ["Actual tolls, parking and permits", money(extraTotal)]],
         theme: "grid", styles: { fontSize: 9, cellPadding: 3, lineColor: [222, 227, 224], lineWidth: 0.18 },
         headStyles: { fillColor: [24, 79, 58], textColor: 255, fontStyle: "bold" },
-        columnStyles: { 0: { cellWidth: 128 }, 1: { halign: "right", cellWidth: 52, fontStyle: "normal" } }, didDrawCell: amountCell(1),
+        columnStyles: { 0: { cellWidth: 128 }, 1: { halign: "right", cellWidth: 52, font: "VayoraCurrency", fontStyle: "normal" } },
       });
       tableModule.default(doc, {
         startY: (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 4, margin: { left: 95, right: 15 },
         body: [["Grand total", money(grandTotal)], ["Booking amount received", money(Number(billBooking.minimum_booking_amount || 0))], ["BALANCE DUE", money(balance)]],
         theme: "grid", styles: { fontSize: 9, cellPadding: 3.2, lineColor: [206, 215, 210], lineWidth: 0.18 },
         columnStyles: { 0: { fontStyle: "bold", cellWidth: 62 }, 1: { halign: "right", cellWidth: 38 } },
-        didParseCell: (data) => { if (data.row.index === 2) { data.cell.styles.fillColor = [9, 34, 53]; data.cell.styles.textColor = [255, 255, 255]; data.cell.styles.fontStyle = "bold"; } },
-        didDrawCell: amountCell(1, 2),
+        didParseCell: (data) => {
+          if (data.section === "body" && data.column.index === 1) data.cell.styles.font = "VayoraCurrency";
+          if (data.row.index === 2) { data.cell.styles.fillColor = [9, 34, 53]; data.cell.styles.textColor = [255, 255, 255]; data.cell.styles.fontStyle = "bold"; }
+        },
       });
       if (billExtras.length) {
         doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.setTextColor(9, 34, 53);
@@ -333,7 +338,7 @@ export default function AdminPage() {
           body: billExtras.map((line) => [line.date, line.type, line.location || "—", line.note || "—", money(line.amount)]),
           theme: "grid", styles: { fontSize: 8.2, cellPadding: 2.7, lineColor: [222, 227, 224], lineWidth: 0.18 },
           headStyles: { fillColor: [9, 34, 53], textColor: 255, fontStyle: "bold" },
-          columnStyles: { 0: { cellWidth: 27 }, 1: { cellWidth: 23 }, 2: { cellWidth: 39 }, 3: { cellWidth: 57 }, 4: { cellWidth: 34, halign: "right" } }, didDrawCell: amountCell(4),
+          columnStyles: { 0: { cellWidth: 27 }, 1: { cellWidth: 23 }, 2: { cellWidth: 39 }, 3: { cellWidth: 57 }, 4: { cellWidth: 34, halign: "right", font: "VayoraCurrency", fontStyle: "normal" } },
         });
       }
       let y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 13;
@@ -410,7 +415,7 @@ export default function AdminPage() {
       <header className="admin-header"><Brand href="/" name="Vayora Admin" /><div className="admin-header-actions"><Link href="/">Back to website</Link><button onClick={signOut}>Sign out</button></div></header>
       <div className="admin-tabs">
         {(["requests", "calendar", "bills", "fares", "system"] as const).map((item) => (
-          <button className={tab === item ? "active" : ""} onClick={() => setTab(item)} key={item}>
+          <button className={tab === item ? "active" : ""} onClick={() => { setTab(item); setMessage(""); }} key={item}>
             {item[0].toUpperCase() + item.slice(1)}
             {item === "requests" && <span>{bookings.filter((booking) => ["pending", "amendment_requested"].includes(booking.status)).length}</span>}
           </button>
