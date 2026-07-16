@@ -405,12 +405,11 @@ export default function AdminPage() {
           <p className="eyebrow">Private administration</p>
           <h1>Admin sign in</h1>
           <form className="lookup-card" onSubmit={login}>
-            <label><span>Admin email</span><input name="email" type="email" defaultValue="anupkr9265@gmail.com" required /></label>
-            <label><span>Password</span><input name="password" type="password" required /></label>
+            <label><span>Admin email</span><input name="email" type="email" autoComplete="username" required /></label>
+            <label><span>Password</span><input name="password" type="password" autoComplete="current-password" required /></label>
             <button className="primary-button">Sign in securely</button>
           </form>
           <StatusMessage tone={messageTone}>{message}</StatusMessage>
-          <div className="admin-credential-note"><strong>Where is the password stored?</strong>Your password is an encrypted Cloudflare secret named ADMIN_PASSWORD. It is never saved in this website or GitHub.</div>
         </section>
       </main>
     );
