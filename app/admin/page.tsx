@@ -277,26 +277,75 @@ export default function AdminPage() {
       if (!await saveBillDraft(false)) throw new Error("The draft could not be saved.");
       const [{ jsPDF }, tableModule] = await Promise.all([import("jspdf"), import("jspdf-autotable")]);
       const doc = new jsPDF();
-      doc.setFillColor(24, 79, 58); doc.roundedRect(14, 12, 18, 18, 3, 3, "F");
-      doc.setFillColor(249, 115, 22); doc.rect(27, 12, 5, 18, "F");
-      doc.setTextColor(255, 255, 255); doc.setFontSize(14); doc.text("V", 20, 24);
-      doc.setTextColor(9, 34, 53); doc.setFontSize(22); doc.text("Vayora", 38, 22);
-      doc.setFontSize(10); doc.setTextColor(70, 85, 78); doc.text("Every journey, cared for like family.", 38, 28);
-      doc.setFontSize(16); doc.setTextColor(9, 34, 53); doc.text("Trip Fare Statement", 14, 43);
+      const money = (amount: number) => Number(amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const drawRupee = (x: number, y: number) => {
+        doc.setDrawColor(34, 45, 40); doc.setLineWidth(0.32);
+        doc.line(x, y - 2.3, x + 4.2, y - 2.3); doc.line(x, y - 0.8, x + 4.2, y - 0.8);
+        doc.line(x + 1.1, y - 3.1, x + 1.1, y - 0.8); doc.line(x + 1.1, y - 0.8, x + 4.1, y + 2.6);
+      };
+      doc.setFillColor(24, 79, 58); doc.rect(0, 0, 210, 6, "F");
+      doc.roundedRect(15, 14, 17, 17, 3, 3, "F");
+      doc.setFillColor(249, 115, 22); doc.rect(27, 14, 5, 17, "F");
+      doc.setTextColor(255, 255, 255); doc.setFont("helvetica", "bold"); doc.setFontSize(13); doc.text("V", 20.3, 25.3);
+      doc.setTextColor(9, 34, 53); doc.setFontSize(21); doc.text("Vayora", 38, 22);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(70, 85, 78); doc.text("Every journey, cared for like family.", 38, 28);
+      doc.setFont("helvetica", "bold"); doc.setFontSize(15); doc.setTextColor(9, 34, 53); doc.text("TRIP FARE STATEMENT", 195, 19, { align: "right" });
+      doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(92, 103, 97); doc.text(`Issued ${new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}`, 195, 25, { align: "right" });
+      doc.setDrawColor(218, 225, 221); doc.line(15, 37, 195, 37);
       const details = [
         ["Booking ID", billBooking.id], ["Customer", billBooking.customer_name],
         ["Route", `${billBooking.pickup} to ${billBooking.destination}`],
         ["Travel", `${billBooking.travel_date} ${billBooking.pickup_time || ""}`], ["Vehicle", billBooking.vehicle],
       ];
-      tableModule.default(doc, { startY: 48, body: details, theme: "plain", styles: { fontSize: 9 }, columnStyles: { 0: { fontStyle: "bold", cellWidth: 35 } } });
+      tableModule.default(doc, { startY: 41, margin: { left: 15, right: 15 }, body: details, theme: "plain", styles: { fontSize: 9, cellPadding: { top: 2, bottom: 2, left: 0, right: 2 }, textColor: [31, 45, 39] }, columnStyles: { 0: { fontStyle: "bold", cellWidth: 32, textColor: [24, 79, 58] } } });
       const summaryTotal = billLines.reduce((sum, line) => sum + Number(line.amount || 0), 0);
       const extraTotal = billExtras.reduce((sum, line) => sum + Number(line.amount || 0), 0);
       const grandTotal = summaryTotal + extraTotal;
       const balance = grandTotal - Number(billBooking.minimum_booking_amount || 0);
-      tableModule.default(doc, { startY: (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 4, head: [["Fare summary", "Amount"]], body: [...billLines.map((line) => [line.label, `₹${Number(line.amount || 0).toLocaleString("en-IN")}`]), ["Additional actual charges", `₹${extraTotal.toLocaleString("en-IN")}`], ["Grand total", `₹${grandTotal.toLocaleString("en-IN")}`], ["Booking amount received", `₹${Number(billBooking.minimum_booking_amount || 0).toLocaleString("en-IN")}`], ["Balance due", `₹${balance.toLocaleString("en-IN")}`]], theme: "grid", headStyles: { fillColor: [24, 79, 58] } });
-      if (billExtras.length) tableModule.default(doc, { startY: (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8, head: [["Date", "Type / place", "Note", "Amount"]], body: billExtras.map((line) => [line.date, `${line.type}${line.location ? ` — ${line.location}` : ""}`, line.note, `₹${Number(line.amount || 0).toLocaleString("en-IN")}`]), theme: "striped", headStyles: { fillColor: [9, 34, 53] } });
-      const y = Math.min(282, (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 14);
-      doc.setFontSize(10); doc.setTextColor(24, 79, 58); doc.text("Thank you for travelling with Vayora. Your safety and comfort travel with us.", 14, y);
+      const amountCell = (columnIndex: number) => (data: Parameters<NonNullable<NonNullable<Parameters<typeof tableModule.default>[1]>["didDrawCell"]>>[0]) => {
+        if (data.section !== "body" || data.column.index !== columnIndex) return;
+        const value = String(data.cell.raw ?? "");
+        const symbolX = data.cell.x + data.cell.width - 5 - doc.getTextWidth(value) - 5.5;
+        drawRupee(symbolX, data.cell.y + data.cell.height / 2 + 0.4);
+      };
+      tableModule.default(doc, {
+        startY: (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6, margin: { left: 15, right: 15 },
+        head: [["Fare description", "Amount (INR)"]],
+        body: [...billLines.map((line) => [line.label, money(line.amount)]), ["Actual tolls, parking and permits", money(extraTotal)]],
+        theme: "grid", styles: { fontSize: 9, cellPadding: 3, lineColor: [222, 227, 224], lineWidth: 0.18 },
+        headStyles: { fillColor: [24, 79, 58], textColor: 255, fontStyle: "bold" },
+        columnStyles: { 0: { cellWidth: 128 }, 1: { halign: "right", cellWidth: 52, fontStyle: "normal" } }, didDrawCell: amountCell(1),
+      });
+      tableModule.default(doc, {
+        startY: (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 4, margin: { left: 95, right: 15 },
+        body: [["Grand total", money(grandTotal)], ["Booking amount received", money(Number(billBooking.minimum_booking_amount || 0))], ["BALANCE DUE", money(balance)]],
+        theme: "grid", styles: { fontSize: 9, cellPadding: 3.2, lineColor: [206, 215, 210], lineWidth: 0.18 },
+        columnStyles: { 0: { fontStyle: "bold", cellWidth: 62 }, 1: { halign: "right", cellWidth: 38 } },
+        didParseCell: (data) => { if (data.row.index === 2) { data.cell.styles.fillColor = [9, 34, 53]; data.cell.styles.textColor = [255, 255, 255]; data.cell.styles.fontStyle = "bold"; } },
+        didDrawCell: amountCell(1),
+      });
+      if (billExtras.length) {
+        doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.setTextColor(9, 34, 53);
+        doc.text("ACTUAL CHARGE DETAILS", 15, (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10);
+        tableModule.default(doc, {
+          startY: (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 13, margin: { left: 15, right: 15 },
+          head: [["Date", "Type", "Place", "Reference / Note", "Amount (INR)"]],
+          body: billExtras.map((line) => [line.date, line.type, line.location || "—", line.note || "—", money(line.amount)]),
+          theme: "grid", styles: { fontSize: 8.2, cellPadding: 2.7, lineColor: [222, 227, 224], lineWidth: 0.18 },
+          headStyles: { fillColor: [9, 34, 53], textColor: 255, fontStyle: "bold" },
+          columnStyles: { 0: { cellWidth: 27 }, 1: { cellWidth: 23 }, 2: { cellWidth: 39 }, 3: { cellWidth: 57 }, 4: { cellWidth: 34, halign: "right" } }, didDrawCell: amountCell(4),
+        });
+      }
+      let y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 13;
+      if (y > 268) { doc.addPage(); y = 24; }
+      doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.setTextColor(24, 79, 58); doc.text("Thank you for choosing Vayora.", 15, y);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(83, 96, 89); doc.text("Your safety and comfort travel with us on every journey.", 15, y + 5);
+      const pages = doc.getNumberOfPages();
+      for (let page = 1; page <= pages; page += 1) {
+        doc.setPage(page); doc.setDrawColor(218, 225, 221); doc.line(15, 284, 195, 284);
+        doc.setFontSize(7.5); doc.setTextColor(96, 108, 101); doc.text("Vayora Cabs · Jamshedpur, Jharkhand · +91 93045 91415 · natul0636@gmail.com", 15, 289);
+        doc.text(`Page ${page} of ${pages}`, 195, 289, { align: "right" });
+      }
       doc.save(`Vayora-${billBooking.id}-Trip-Fare-Statement.pdf`);
       const response = await fetch("/api/admin/bills", { method: "POST", headers: { authorization: `Bearer ${token}`, "content-type": "application/json" }, body: JSON.stringify({ bookingId: billBooking.id }) });
       const result = await response.json(); setMessage(result.message || "PDF downloaded."); setMessageTone(response.ok ? "success" : "error");
