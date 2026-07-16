@@ -1,32 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { cleanupExpiredDocuments, createBookingId, ensureSchema, getDatabase, getDocuments } from "../../../lib/platform";
+import { cleanupExpiredBookings, createBookingId, deletionDateFrom, ensureSchema, getDatabase } from "../../../lib/platform";
 import { defaultFareConfig, parseFareProperties } from "../../../lib/fare-config";
-
-const notificationEmail = process.env.BOOKING_NOTIFICATION_EMAIL || "natul0636@gmail.com";
-const businessPhone = process.env.BOOKING_PHONE || "+919304591415";
-const escapeHtml = (value: unknown) => String(value ?? "").replace(/[&<>'"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[c] || c);
-
-async function sendEmail(booking: Record<string, unknown>, bookingId: string) {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) return false;
-  const rows = [
-    ["Request ID", bookingId], ["Customer", booking.name], ["Phone", booking.phone], ["Email", booking.email || "Not provided"],
-    ["Pickup", booking.pickup], ["Destination", booking.destination], ["Travel date", booking.travelDate], ["Pickup time", booking.pickupTime],
-    ["Trip", booking.tripType], ["Vehicle", booking.vehicle], ["Estimated distance", `${booking.distanceKm} km`],
-    ["Estimated fare", `₹${booking.fareTotal}`], ["Airport", booking.airport || "No"], ["Flight", booking.flightNumber || "Not provided"],
-    ["Customer note", booking.note || "None"], ["Identity document", booking.documentStored ? "Stored privately; delete 7 days after travel/cancellation" : "Not stored"],
-  ];
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      from: process.env.BOOKING_FROM_EMAIL || "Vayora Bookings <onboarding@resend.dev>", to: [notificationEmail],
-      reply_to: booking.email || undefined, subject: `Vayora request ${bookingId}: ${booking.pickup} to ${booking.destination}`,
-      html: `<div style="font-family:Arial,sans-serif;max-width:680px;margin:auto"><h2>New Vayora booking request</h2><p>Review and approve this request in the admin panel. Contact: ${escapeHtml(businessPhone)}</p><table style="width:100%;border-collapse:collapse">${rows.map(([label, value]) => `<tr><td style="padding:9px;border-bottom:1px solid #ddd;font-weight:bold">${escapeHtml(label)}</td><td style="padding:9px;border-bottom:1px solid #ddd">${escapeHtml(value)}</td></tr>`).join("")}</table></div>`,
-    }),
-  });
-  return response.ok;
-}
+import { sendBookingNotification, sendDeletionReminder } from "../../../lib/email";
 
 export async function POST(request: NextRequest) {
   const contentType = request.headers.get("content-type") || "";
@@ -41,28 +16,26 @@ export async function POST(request: NextRequest) {
 
   const required = ["name", "phone", "pickup", "destination", "travelDate", "vehicle", "fareTotal"];
   if (required.some((key) => !String(booking[key] ?? "").trim())) return NextResponse.json({ error: "Please complete all required booking details." }, { status: 400 });
-  if (!document) return NextResponse.json({ error: "Please upload a JPG, PNG or PDF identity document." }, { status: 400 });
-  if (!["image/jpeg", "image/png", "application/pdf"].includes(document.type) || document.size > 5 * 1024 * 1024) return NextResponse.json({ error: "Identity document must be JPG, PNG or PDF and no larger than 5 MB." }, { status: 400 });
+  if (!document) return NextResponse.json({ error: "Please upload a JPG or PNG identity document." }, { status: 400 });
+  if (!["image/jpeg", "image/png"].includes(document.type) || document.size > 5 * 1024 * 1024) return NextResponse.json({ error: "Identity document must be JPG or PNG and no larger than 5 MB." }, { status: 400 });
 
   const id = createBookingId();
   const now = new Date().toISOString();
-  const deletionDate = new Date(`${booking.travelDate}T23:59:59+05:30`);
-  deletionDate.setDate(deletionDate.getDate() + 7);
   const db = getDatabase();
-  const bucket = getDocuments();
-  if (!db || !bucket) return NextResponse.json({ error: "Secure booking storage is being connected. Please call us to book meanwhile." }, { status: 503 });
+  if (!db) return NextResponse.json({ error: "Booking records are being connected. Please call us to book meanwhile." }, { status: 503 });
 
   await ensureSchema(db);
-  await cleanupExpiredDocuments(db, bucket);
-  const extension = document.type === "application/pdf" ? "pdf" : document.type === "image/png" ? "png" : "jpg";
-  const documentKey = `identity/${id}.${extension}`;
-  await bucket.put(documentKey, await document.arrayBuffer(), { httpMetadata: { contentType: document.type }, customMetadata: { bookingId: id, deleteAfter: deletionDate.toISOString() } });
-  booking.documentStored = true;
-  await db.prepare(`INSERT INTO bookings(id,customer_name,phone,email,pickup,destination,travel_date,pickup_time,trip_type,vehicle,fare_total,status,details_json,document_key,document_delete_after,created_at,updated_at)
-    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(id, booking.name, booking.phone, booking.email || null, booking.pickup, booking.destination, booking.travelDate, booking.pickupTime || null, booking.tripType, booking.vehicle, Number(booking.fareTotal), "pending", JSON.stringify(booking), documentKey, deletionDate.toISOString(), now, now).run();
+  await cleanupExpiredBookings(db);
+  booking.identityDocumentDelivery = "admin-email-only";
+  await db.prepare(`INSERT INTO bookings(id,customer_name,phone,email,pickup,destination,travel_date,pickup_time,trip_type,vehicle,fare_total,status,details_json,created_at,updated_at,delete_after)
+    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NULL)`).bind(id, booking.name, booking.phone, booking.email || null, booking.pickup, booking.destination, booking.travelDate, booking.pickupTime || null, booking.tripType, booking.vehicle, Number(booking.fareTotal), "pending", JSON.stringify(booking), now, now).run();
 
-  const emailed = await sendEmail(booking, id);
-  return NextResponse.json({ success: true, bookingId: id, message: `Request ${id} received${emailed ? " and emailed" : ""}. It is pending approval.` });
+  const emailed = await sendBookingNotification(booking, id, document);
+  if (!emailed) {
+    await db.prepare("DELETE FROM bookings WHERE id=?").bind(id).run();
+    return NextResponse.json({ error: "We could not email your identity document, so no booking was created. Please try again or call Vayora." }, { status: 502 });
+  }
+  return NextResponse.json({ success: true, bookingId: id, message: `Request ${id} was received and emailed with your identity document. It is pending approval.` });
 }
 
 export async function GET(request: NextRequest) {
@@ -72,7 +45,7 @@ export async function GET(request: NextRequest) {
   const db = getDatabase();
   if (!db) return NextResponse.json({ error: "Booking lookup is not connected yet." }, { status: 503 });
   await ensureSchema(db);
-  const bucket = getDocuments(); if (bucket) await cleanupExpiredDocuments(db, bucket);
+  await cleanupExpiredBookings(db);
   const row = await db.prepare("SELECT id,pickup,destination,travel_date,pickup_time,trip_type,vehicle,fare_total,status,driver_name,driver_phone,admin_note,created_at FROM bookings WHERE id=? AND REPLACE(REPLACE(REPLACE(phone,'+',''),' ',''),'-','') LIKE ?")
     .bind(id, `%${phone.slice(-10)}`).first();
   return row ? NextResponse.json(row) : NextResponse.json({ error: "No booking matched those details." }, { status: 404 });
@@ -83,6 +56,7 @@ export async function PATCH(request: NextRequest) {
   const db = getDatabase();
   if (!db) return NextResponse.json({ error: "Booking updates are not connected yet." }, { status: 503 });
   await ensureSchema(db);
+  await cleanupExpiredBookings(db);
   const digits = String(phone || "").replace(/\D/g, "").slice(-10);
   type BookingRow = { id:string; status:string; travel_date:string; pickup_time:string|null; fare_total:number };
   const row = await db.prepare("SELECT * FROM bookings WHERE id=? AND REPLACE(REPLACE(REPLACE(phone,'+',''),' ',''),'-','') LIKE ?").bind(String(id).toUpperCase(), `%${digits}`).first<BookingRow>();
@@ -95,8 +69,10 @@ export async function PATCH(request: NextRequest) {
     const cancellationFee = daysBefore >= config.cancellation.freeBeforeDays ? 0 : daysBefore >= 2
       ? Math.min(config.cancellation.maximumWithinWeek, Number(row.fare_total) * config.cancellation.withinWeekPercent / 100)
       : Math.min(config.cancellation.maximumWithin48Hours, Number(row.fare_total) * config.cancellation.within48HoursPercent / 100);
-    const cancelledAt = new Date(); const deleteAfter = new Date(cancelledAt); deleteAfter.setDate(deleteAfter.getDate() + 7);
-    await db.prepare("UPDATE bookings SET status='cancelled',cancelled_at=?,document_delete_after=?,updated_at=?,admin_note=? WHERE id=?").bind(cancelledAt.toISOString(), deleteAfter.toISOString(), cancelledAt.toISOString(), `Customer cancellation. Indicative fee: ₹${Math.round(cancellationFee)}`, row.id).run();
+    const cancelledAt = new Date();
+    const deleteAfter = deletionDateFrom(cancelledAt);
+    await db.prepare("UPDATE bookings SET status='cancelled',cancelled_at=?,delete_after=?,updated_at=?,admin_note=? WHERE id=?").bind(cancelledAt.toISOString(), deleteAfter, cancelledAt.toISOString(), `Customer cancellation. Indicative fee: ₹${Math.round(cancellationFee)}`, row.id).run();
+    await sendDeletionReminder({ bookingId: row.id, status: "cancelled", deleteAfter });
     return NextResponse.json({ success: true, cancellationFee, message: cancellationFee ? `Cancellation recorded. Applicable fee: ₹${Math.round(cancellationFee)}.` : "Booking cancelled with no fee." });
   }
   if (action === "amend") {

@@ -11,7 +11,7 @@ Vayora is a responsive cab-booking website for trips starting in Jamshedpur and 
 - Customer booking form that sends ride details to the business email
 - Responsive desktop and mobile design
 - Dedicated Ranchi and Kolkata airport booking
-- Private identity-document upload with seven-day retention after travel/cancellation
+- Identity-document upload delivered directly to the private admin email without database or object storage
 - Booking ID lookup, amendments and configurable cancellation fees
 - Password-protected admin approval, driver assignment, calendar and live fare editor
 
@@ -20,9 +20,8 @@ Vayora is a responsive cab-booking website for trips starting in Jamshedpur and 
 The complete workflow uses Cloudflare's free allowances. Create and bind:
 
 - A **D1 database** with binding name `DB`
-- An **R2 bucket** with binding name `DOCUMENTS`
 
-The application creates its tables on first use. Identity documents are never attached to email. Expired documents are removed during booking/admin activity after their seven-day retention deadline.
+The application creates its tables on first use. Identity documents are attached directly to the private admin notification email and are never written to D1 or R2. Active bookings remain available without a deletion deadline. Completed, cancelled and rejected booking records are deleted after seven days during subsequent booking/admin activity. When a booking becomes terminal, the admin receives a reminder to delete the original email and identity attachment by the same deadline.
 
 ## Configure fares
 
@@ -59,7 +58,7 @@ The calculation logic is isolated in `lib/fare-calculator.ts`. The UI never cont
 
 ## Email notifications
 
-Create a [Resend](https://resend.com) account, verify a sender domain, and configure these environment variables in Vercel:
+Create a [Resend](https://resend.com) account and configure these secrets and variables in the Cloudflare Worker. A verified sender domain is required before sending to arbitrary customer addresses; `onboarding@resend.dev` can be used for initial admin-only testing.
 
 ```text
 RESEND_API_KEY=your_api_key

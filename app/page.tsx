@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import CityAutocomplete, { type CitySuggestion } from "../components/CityAutocomplete";
 import FareBreakdownPanel from "../components/FareBreakdownPanel";
+import Brand from "../components/Brand";
 import { calculateFare, estimateRoadDistanceKm } from "../lib/fare-calculator";
 import {
   defaultFareConfig,
@@ -142,12 +143,7 @@ export default function Home() {
   return (
     <main>
       <header className="site-header">
-        <a className="brand" href="#top" aria-label="Vayora home">
-          <span className="brand-mark" aria-hidden="true">
-            V
-          </span>
-          <span>Vayora</span>
-        </a>
+        <Brand href="#top" />
 
         <nav className="desktop-nav" aria-label="Main navigation">
           <a className="active" href="#book">
@@ -346,14 +342,14 @@ export default function Home() {
                     <label><span>Email</span><input name="email" type="email" placeholder="you@example.com" /></label>
                     <label><span>Pickup address *</span><input name="pickup" required placeholder="Area or full address in Jamshedpur" /></label>
                     <label className="full-field"><span>Anything we should know?</span><textarea name="note" rows={3} placeholder="Luggage, stops, accessibility needs…" /></label>
-                    <label className="full-field identity-upload"><span>Identity document (Aadhaar or government ID) *</span><input name="identityDocument" type="file" accept="image/jpeg,image/png,application/pdf" required /><small>Normal or masked Aadhaar is accepted. JPG, PNG or PDF, maximum 5 MB. We do not validate it with any third party.</small></label>
+                    <label className="full-field identity-upload"><span>Identity document (Aadhaar or government ID) *</span><input name="identityDocument" type="file" accept="image/jpeg,image/png" required /><small>Normal or masked Aadhaar is accepted. JPG or PNG, maximum 5 MB. We do not validate it with any third party.</small></label>
                   </div>
-                  <label className="consent-row"><input type="checkbox" required /><span>I consent to private storage of this identity document. It will be deleted seven days after travel or cancellation and will not be attached to email.</span></label>
+                  <label className="consent-row"><input type="checkbox" required /><span>I consent to this identity document being emailed privately to Vayora for booking verification. It is not stored in the website database. Vayora will delete the admin-mailbox copy within seven days after the booking is completed, cancelled or rejected.</span></label>
                   <button className="primary-button booking-submit" type="submit" disabled={submittingBooking}>
                     {submittingBooking ? "Sending request…" : `Request booking for ₹${Math.round(fareBreakdown.total).toLocaleString("en-IN")}`}
                   </button>
                   <p className="booking-status" role="status" aria-live="polite">{bookingStatus}</p>
-                  <p className="privacy-note">Your booking details are sent to Vayora support. Your identity document remains in private storage and is never emailed.</p>
+                  <p className="privacy-note">Your identity image goes only to Vayora&apos;s private admin email. It is not stored in the website database and will be removed from the admin mailbox within seven days after completion, cancellation or rejection.</p>
                 </form>
                 <div className="selection-bar" role="status" aria-live="polite">
                   <span><b>{selectedVehicle.name}</b> selected for Jamshedpur → {destination.trim()}</span>
@@ -513,7 +509,7 @@ export default function Home() {
 
       <footer id="account">
         <div className="footer-brand">
-          <a className="brand footer-logo" href="#top"><span className="brand-mark">V</span><span>Vayora</span></a>
+          <Brand className="footer-logo" href="#top" />
           <p>Thoughtful road travel from Jamshedpur to anywhere in India.</p>
         </div>
         <div>

@@ -54,7 +54,7 @@ select {
 .record-heading p { margin: 0 0 6px; color: var(--saffron); font-size: .76rem; font-weight: 800; letter-spacing: .08em; }
 .record-heading h2, .record-heading h3 { margin: 0; color: var(--navy); }
 .status-pill { padding: 7px 11px; border-radius: 999px; background: #e9eef1; font-size: .72rem; font-weight: 800; text-transform: capitalize; }
-.status-approved { background: #dff4e6; color: #126439; }.status-pending,.status-amendment_requested { background:#fff0c9;color:#805a00; }.status-rejected,.status-cancelled { background:#fde5e5;color:#9b2323; }
+.status-approved { background: #dff4e6; color: #126439; }.status-pending,.status-amendment_requested { background:#fff0c9;color:#805a00; }.status-rejected,.status-cancelled { background:#fde5e5;color:#9b2323; }.status-completed { background:#e3edf8;color:#174d7d; }
 .booking-record dl { display: grid; grid-template-columns: repeat(3,1fr); gap: 18px; margin: 28px 0; }
 .booking-record dl div { padding-top: 12px; border-top: 1px solid var(--line); }.booking-record dt { color: var(--muted); font-size:.75rem; }.booking-record dd { margin:5px 0 0; font-weight:700; }
 .record-actions { display:flex; gap:12px; }.record-actions button,.admin-header button { padding:11px 15px;border:1px solid var(--line);border-radius:9px;background:white;cursor:pointer;font-weight:700; }.record-actions .danger-button { color:#a42626;border-color:#efb3b3; }
@@ -62,6 +62,7 @@ select {
 .admin-login { max-width: 620px; }.admin-login .brand { margin-bottom: 70px; }.admin-login .lookup-card { grid-template-columns:1fr; }
 .admin-page { min-height:100vh;background:#f4f6f3;padding-bottom:80px; }.admin-header { display:flex;justify-content:space-between;align-items:center;padding:20px 5vw;background:white;border-bottom:1px solid var(--line); }.admin-tabs { display:flex;gap:8px;width:min(1180px,calc(100% - 36px));margin:30px auto; }.admin-tabs button { padding:12px 17px;border:0;border-radius:9px;background:white;cursor:pointer;font-weight:750; }.admin-tabs button.active { background:var(--navy);color:white; }.admin-tabs span { margin-left:8px;padding:2px 7px;border-radius:99px;background:var(--saffron);color:white; }
 .admin-message,.admin-grid,.calendar-list,.fare-editor { width:min(1180px,calc(100% - 36px));margin-left:auto;margin-right:auto; }.admin-grid { display:grid;grid-template-columns:repeat(2,1fr);gap:18px; }.admin-booking-card,.calendar-list,.fare-editor { padding:24px;border:1px solid var(--line);border-radius:16px;background:white; }.admin-fields { display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0; }.admin-fields .full-field { grid-column:1/-1; }
+.retention-reminder { margin:16px 0 0;padding:10px 12px;border-radius:9px;font-size:.76rem;font-weight:680;line-height:1.45; }.retention-reminder.active { background:#edf5ee;color:var(--forest); }.retention-reminder.due { background:#fff0df;color:#87400d; }
 .calendar-list article { display:grid;grid-template-columns:140px 1fr;gap:24px;padding:20px 0;border-top:1px solid var(--line); }.calendar-list time { color:var(--forest);font-weight:800; }.calendar-list h3,.calendar-list p { margin:0 0 6px; }
 .fare-editor { display:grid;grid-template-columns:.65fr 1.35fr;gap:24px; }.fare-editor textarea { min-height:560px;padding:18px;border:1px solid var(--line);border-radius:12px;background:#091b2a;color:#e8f5ed;font:13px/1.65 ui-monospace,monospace; }.fare-editor button { grid-column:2; }
 
@@ -96,9 +97,6 @@ a {
   gap: 10px;
   width: fit-content;
   color: var(--navy);
-  font-size: 1.55rem;
-  font-weight: 780;
-  letter-spacing: -0.04em;
 }
 
 .brand-mark {
@@ -115,11 +113,22 @@ a {
   box-shadow: inset -7px -7px 0 rgba(249, 115, 22, 0.92);
 }
 
-.brand-mark + span {
-  position: relative;
+.brand-copy {
+  display: grid;
+  gap: 3px;
+  line-height: 1;
+  letter-spacing: 0;
 }
 
-.brand-mark + span::after {
+.brand-name {
+  position: relative;
+  width: fit-content;
+  font-size: 1.55rem;
+  font-weight: 780;
+  letter-spacing: -0.04em;
+}
+
+.brand-name::after {
   position: absolute;
   right: -9px;
   top: 1px;
@@ -128,6 +137,15 @@ a {
   border-radius: 50%;
   background: var(--saffron);
   content: "";
+}
+
+.brand-copy small {
+  color: var(--forest);
+  font-size: 0.58rem;
+  font-weight: 720;
+  letter-spacing: 0.01em;
+  line-height: 1.15;
+  white-space: nowrap;
 }
 
 .desktop-nav {
@@ -1583,7 +1601,15 @@ footer a:hover {
   }
 
   .brand {
-    font-size: 1.28rem;
+    gap: 8px;
+  }
+
+  .brand-name { font-size: 1.28rem; }
+
+  .brand-copy small {
+    max-width: 155px;
+    font-size: 0.5rem;
+    white-space: normal;
   }
 
   .brand-mark {

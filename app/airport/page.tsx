@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import CityAutocomplete, { type CitySuggestion } from "../../components/CityAutocomplete";
 import FareBreakdownPanel from "../../components/FareBreakdownPanel";
+import Brand from "../../components/Brand";
 import { calculateFare, estimateRoadDistanceKm } from "../../lib/fare-calculator";
 import { defaultFareConfig, parseFareProperties, type FareConfig, type VehicleKey } from "../../lib/fare-config";
 
@@ -139,7 +140,7 @@ export default function AirportPage() {
   return (
     <main className="airport-page">
       <header className="site-header">
-        <Link className="brand" href="/" aria-label="Vayora home"><span className="brand-mark">V</span><span>Vayora</span></Link>
+        <Brand />
         <nav className="desktop-nav" aria-label="Main navigation"><Link href="/#book">Outstation</Link><Link className="active" href="/airport">Airport</Link><Link href="/booking">Find booking</Link></nav>
         <div className="header-actions"><a className="phone-link" href="tel:+919304591415"><span>●</span> +91 93045 91415</a><Link className="login-link" href="/admin">Admin</Link></div>
       </header>
@@ -214,9 +215,9 @@ export default function AirportPage() {
                   <label><span>Full name *</span><input name="name" required /></label><label><span>Mobile number *</span><input name="phone" type="tel" required placeholder="+91" /></label>
                   <label><span>Email</span><input name="email" type="email" /></label><label><span>Exact pickup/drop address *</span><input name="pickupAddress" required /></label>
                   <label className="full-field"><span>Instructions</span><textarea name="note" rows={3} placeholder="Terminal, luggage, stops or accessibility needs" /></label>
-                  <label className="full-field identity-upload"><span>Identity document (Aadhaar or government ID) *</span><input name="identityDocument" type="file" accept="image/jpeg,image/png,application/pdf" required /><small>Normal or masked Aadhaar accepted. No third-party validation. Maximum 5 MB.</small></label>
+                  <label className="full-field identity-upload"><span>Identity document (Aadhaar or government ID) *</span><input name="identityDocument" type="file" accept="image/jpeg,image/png" required /><small>Normal or masked Aadhaar accepted. JPG or PNG, maximum 5 MB. No third-party validation.</small></label>
                 </div>
-                <label className="consent-row"><input type="checkbox" required /><span>I consent to private storage. The document will be deleted seven days after travel or cancellation and will not be emailed.</span></label>
+                <label className="consent-row"><input type="checkbox" required /><span>I consent to this identity document being emailed privately to Vayora for booking verification. It is not stored in the website database. Vayora will delete the admin-mailbox copy within seven days after the booking is completed, cancelled or rejected.</span></label>
                 <p className="waiting-note">From-airport rides include {fareConfig.airport.freeWaitingMinutes} minutes free waiting. Additional waiting: ₹{fareConfig.airport.waitingPerHour}/hour.</p>
                 <button className="primary-button booking-submit" type="submit" disabled={submitting}>{submitting ? "Sending request…" : `Request booking for ₹${Math.round(fareBreakdown.total).toLocaleString("en-IN")}`}</button>
                 <p className="booking-status" role="status">{bookingStatus}</p>
@@ -226,7 +227,7 @@ export default function AirportPage() {
         </section>
       )}
 
-      <footer className="airport-footer"><div className="footer-brand"><Link className="brand footer-logo" href="/"><span className="brand-mark">V</span><span>Vayora</span></Link><p>Airport transfers for Ranchi and Kolkata.</p></div><div><p className="footer-title">Contact</p><a href="tel:+919304591415">+91 93045 91415</a><a href="mailto:natul0636@gmail.com">natul0636@gmail.com</a></div></footer>
+      <footer className="airport-footer"><div className="footer-brand"><Brand className="footer-logo" /><p>Airport transfers for Ranchi and Kolkata.</p></div><div><p className="footer-title">Contact</p><a href="tel:+919304591415">+91 93045 91415</a><a href="mailto:natul0636@gmail.com">natul0636@gmail.com</a></div></footer>
     </main>
   );
 }

@@ -10,14 +10,7 @@ export type D1Database = {
   batch(statements: unknown[]): Promise<unknown>;
 };
 
-export type R2Bucket = {
-  put(key: string, value: ArrayBuffer, options?: { httpMetadata?: { contentType?: string }; customMetadata?: Record<string, string> }): Promise<unknown>;
-  get(key: string): Promise<{ body: ReadableStream; httpMetadata?: { contentType?: string } } | null>;
-  delete(key: string): Promise<void>;
-};
-
 export const getDatabase = () => (process.env.DB as unknown as D1Database | undefined);
-export const getDocuments = () => (process.env.DOCUMENTS as unknown as R2Bucket | undefined);
 
 export async function ensureSchema(db: D1Database) {
   const queries = [
@@ -28,13 +21,18 @@ export async function ensureSchema(db: D1Database) {
       vehicle TEXT NOT NULL, fare_total REAL NOT NULL, status TEXT NOT NULL DEFAULT 'pending',
       details_json TEXT NOT NULL, document_key TEXT, document_delete_after TEXT,
       driver_name TEXT, driver_phone TEXT, admin_note TEXT,
-      created_at TEXT NOT NULL, updated_at TEXT NOT NULL, cancelled_at TEXT
+      created_at TEXT NOT NULL, updated_at TEXT NOT NULL, cancelled_at TEXT,
+      delete_after TEXT
     )`,
     `CREATE INDEX IF NOT EXISTS idx_bookings_phone ON bookings(phone)`,
     `CREATE INDEX IF NOT EXISTS idx_bookings_travel_date ON bookings(travel_date)`,
     `CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEXT NOT NULL)`,
   ];
   for (const query of queries) await db.prepare(query).run();
+  // Existing installations predate record-level retention. D1 does not support
+  // ADD COLUMN IF NOT EXISTS, so a duplicate-column error is safely ignored.
+  try { await db.prepare("ALTER TABLE bookings ADD COLUMN delete_after TEXT").run(); } catch { /* already present */ }
+  await db.prepare("CREATE INDEX IF NOT EXISTS idx_bookings_delete_after ON bookings(delete_after)").run();
 }
 
 export function createBookingId() {
@@ -43,14 +41,20 @@ export function createBookingId() {
   return `VAY-${date}-${random}`;
 }
 
-export async function cleanupExpiredDocuments(db: D1Database, bucket: R2Bucket) {
+export function deletionDateFrom(date = new Date()) {
+  const deleteAfter = new Date(date);
+  deleteAfter.setDate(deleteAfter.getDate() + 7);
+  return deleteAfter.toISOString();
+}
+
+export async function cleanupExpiredBookings(db: D1Database) {
   await ensureSchema(db);
-  const expired = await db.prepare("SELECT id,document_key FROM bookings WHERE document_key IS NOT NULL AND document_delete_after <= ? LIMIT 50")
-    .bind(new Date().toISOString()).all<{ id: string; document_key: string }>();
-  for (const row of expired.results || []) {
-    await bucket.delete(row.document_key);
-    await db.prepare("UPDATE bookings SET document_key=NULL,updated_at=? WHERE id=?").bind(new Date().toISOString(), row.id).run();
-  }
+  await db.prepare(`DELETE FROM bookings WHERE id IN (
+    SELECT id FROM bookings
+    WHERE delete_after IS NOT NULL AND delete_after <= ?
+      AND status IN ('completed','cancelled','rejected')
+    LIMIT 100
+  )`).bind(new Date().toISOString()).run();
 }
 
 const encoder = new TextEncoder();
