@@ -434,7 +434,7 @@ export default function AdminPage() {
           <div className="request-toolbar"><div><p className="eyebrow">Booking operations</p><h2>Requests by travel date</h2></div><label><span>Show</span><select value={requestFilter} onChange={(event) => setRequestFilter(event.target.value)}><option value="action">Needs action</option><option value="approved">Approved</option><option value="cancelled">Cancelled</option><option value="completed">Completed</option><option value="rejected">Rejected</option><option value="all">All bookings</option></select></label></div>
           <div className="booking-table" role="table">
             <div className="booking-table-head" role="row"><span>Date</span><span>Route</span><span>Customer</span><span>Fare</span><span>Status</span></div>
-            {visibleBookings.map((booking) => <button className="booking-row" key={booking.id} onClick={() => setSelectedBooking(booking)} role="row">
+            {visibleBookings.map((booking) => <button className="booking-row" key={booking.id} onClick={() => setSelectedBooking({ ...booking })} role="row">
               <span><strong>{new Date(`${booking.travel_date}T00:00:00`).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}</strong><small>{booking.pickup_time || "Time pending"}</small></span>
               <span><strong>{booking.pickup} → {booking.destination}</strong><small>{booking.id}</small></span>
               <span><strong>{booking.customer_name}</strong><small>{booking.phone}</small></span>
@@ -455,7 +455,7 @@ export default function AdminPage() {
         <form onSubmit={(event) => { event.preventDefault(); void updateBooking(selectedBooking.id, event.currentTarget); }}>
           <div className="admin-fields">
             <label><span>Status</span><select name="status" defaultValue={selectedBooking.status}><option value="pending">Pending</option><option value="approved">Approved</option><option value="amendment_requested">Amendment requested</option><option value="rejected">Rejected</option><option value="cancelled">Cancelled</option><option value="completed">Completed</option></select></label>
-            <label><span>Minimum booking amount</span><input name="minimumBookingAmount" type="number" min="0" defaultValue={selectedBooking.minimum_booking_amount || 0} /></label>
+            <label><span>Minimum booking amount</span><input name="minimumBookingAmount" type="number" min="0" value={selectedBooking.minimum_booking_amount || 0} onChange={(event) => setSelectedBooking((booking) => booking ? { ...booking, minimum_booking_amount: Number(event.target.value || 0) } : booking)} /></label>
             <label><span>Driver name</span><input name="driverName" defaultValue={selectedBooking.driver_name || ""} /></label>
             <label><span>Driver phone</span><input name="driverPhone" defaultValue={selectedBooking.driver_phone || ""} /></label>
             <label className="full-field"><span>Admin note</span><textarea name="adminNote" defaultValue={selectedBooking.admin_note || ""} /></label>

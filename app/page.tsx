@@ -527,7 +527,7 @@ export default function Home() {
         <div>
           <p className="footer-title">Contact</p>
           <a href="tel:+919304591415">+91 93045 91415</a>
-          <a href="mailto:natul0636@gmail.com">natul0636@gmail.com</a>
+          <a href="https://mail.google.com/mail/?view=cm&fs=1&to=natul0636@gmail.com" target="_blank" rel="noreferrer">natul0636@gmail.com</a>
           <span>Jamshedpur, Jharkhand</span>
         </div>
         <div className="footer-bottom">

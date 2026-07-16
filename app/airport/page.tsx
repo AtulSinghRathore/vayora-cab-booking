@@ -238,7 +238,7 @@ export default function AirportPage() {
         </section>
       )}
 
-      <footer className="airport-footer"><div className="footer-brand"><Brand className="footer-logo" /><p>Airport transfers for Ranchi and Kolkata.</p></div><div><p className="footer-title">Contact</p><a href="tel:+919304591415">+91 93045 91415</a><a href="mailto:natul0636@gmail.com">natul0636@gmail.com</a></div></footer>
+      <footer className="airport-footer"><div className="footer-brand"><Brand className="footer-logo" /><p>Airport transfers for Ranchi and Kolkata.</p></div><div><p className="footer-title">Contact</p><a href="tel:+919304591415">+91 93045 91415</a><a href="https://mail.google.com/mail/?view=cm&fs=1&to=natul0636@gmail.com" target="_blank" rel="noreferrer">natul0636@gmail.com</a></div></footer>
     </main>
   );
 }
