@@ -30,12 +30,6 @@ export const metadata: Metadata = {
   other: {
     "codex-preview": "development",
   },
-  icons: {
-    icon: [{ url: "/vayora-icon.svg", type: "image/svg+xml" }],
-    shortcut: "/vayora-icon.svg",
-    apple: "/vayora-icon.svg",
-  },
-  manifest: "/site.webmanifest",
 };
 
 export default function RootLayout({
@@ -45,6 +39,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link rel="icon" href="/vayora-icon.svg?v=3" type="image/svg+xml" />
+        <link rel="shortcut icon" href="/vayora-icon.svg?v=3" />
+        <link rel="apple-touch-icon" href="/vayora-icon.svg?v=3" />
+        <link rel="manifest" href="/site.webmanifest?v=3" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
