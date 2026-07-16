@@ -21,7 +21,7 @@ The complete workflow uses Cloudflare's free allowances. Create and bind:
 
 - A **D1 database** with binding name `DB`
 
-The application creates its tables on first use. Identity documents are attached directly to the private admin notification email and are never written to D1 or R2. Active bookings remain available without a deletion deadline. Completed, cancelled and rejected booking records are deleted after seven days during subsequent booking/admin activity. When a booking becomes terminal, the admin receives a reminder to delete the original email and identity attachment by the same deadline.
+The application creates its tables on first use. Identity documents are attached directly to the private admin notification email and are never written to D1 or R2. Active bookings remain available without a deletion deadline. Completed, cancelled and rejected booking records are deleted after seven days by a daily Cloudflare cleanup job. When a booking becomes terminal, the admin receives a reminder to delete the original email and identity attachment by the same deadline.
 
 ## Configure fares
 
