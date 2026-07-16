@@ -278,10 +278,10 @@ export default function AdminPage() {
       const [{ jsPDF }, tableModule] = await Promise.all([import("jspdf"), import("jspdf-autotable")]);
       const doc = new jsPDF();
       const money = (amount: number) => Number(amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      const drawRupee = (x: number, y: number) => {
-        doc.setDrawColor(34, 45, 40); doc.setLineWidth(0.32);
-        doc.line(x, y - 2.3, x + 4.2, y - 2.3); doc.line(x, y - 0.8, x + 4.2, y - 0.8);
-        doc.line(x + 1.1, y - 3.1, x + 1.1, y - 0.8); doc.line(x + 1.1, y - 0.8, x + 4.1, y + 2.6);
+      const drawRupee = (x: number, y: number, inverted = false) => {
+        doc.setDrawColor(inverted ? 255 : 34, inverted ? 255 : 45, inverted ? 255 : 40); doc.setLineWidth(0.22);
+        doc.line(x, y - 1.8, x + 3.1, y - 1.8); doc.line(x, y - 0.65, x + 3.1, y - 0.65);
+        doc.line(x + 0.85, y - 2.45, x + 0.85, y - 0.65); doc.line(x + 0.85, y - 0.65, x + 3.05, y + 1.95);
       };
       doc.setFillColor(24, 79, 58); doc.rect(0, 0, 210, 6, "F");
       doc.roundedRect(15, 14, 17, 17, 3, 3, "F");
@@ -302,11 +302,11 @@ export default function AdminPage() {
       const extraTotal = billExtras.reduce((sum, line) => sum + Number(line.amount || 0), 0);
       const grandTotal = summaryTotal + extraTotal;
       const balance = grandTotal - Number(billBooking.minimum_booking_amount || 0);
-      const amountCell = (columnIndex: number) => (data: Parameters<NonNullable<NonNullable<Parameters<typeof tableModule.default>[1]>["didDrawCell"]>>[0]) => {
+      const amountCell = (columnIndex: number, invertedRow = -1) => (data: Parameters<NonNullable<NonNullable<Parameters<typeof tableModule.default>[1]>["didDrawCell"]>>[0]) => {
         if (data.section !== "body" || data.column.index !== columnIndex) return;
         const value = String(data.cell.raw ?? "");
-        const symbolX = data.cell.x + data.cell.width - 5 - doc.getTextWidth(value) - 5.5;
-        drawRupee(symbolX, data.cell.y + data.cell.height / 2 + 0.4);
+        const symbolX = data.cell.x + data.cell.width - 5 - doc.getTextWidth(value) - 4.4;
+        drawRupee(symbolX, data.cell.y + data.cell.height / 2 + 0.25, data.row.index === invertedRow);
       };
       tableModule.default(doc, {
         startY: (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6, margin: { left: 15, right: 15 },
@@ -322,7 +322,7 @@ export default function AdminPage() {
         theme: "grid", styles: { fontSize: 9, cellPadding: 3.2, lineColor: [206, 215, 210], lineWidth: 0.18 },
         columnStyles: { 0: { fontStyle: "bold", cellWidth: 62 }, 1: { halign: "right", cellWidth: 38 } },
         didParseCell: (data) => { if (data.row.index === 2) { data.cell.styles.fillColor = [9, 34, 53]; data.cell.styles.textColor = [255, 255, 255]; data.cell.styles.fontStyle = "bold"; } },
-        didDrawCell: amountCell(1),
+        didDrawCell: amountCell(1, 2),
       });
       if (billExtras.length) {
         doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.setTextColor(9, 34, 53);
