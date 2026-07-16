@@ -10,7 +10,23 @@ export type D1Database = {
   batch(statements: unknown[]): Promise<unknown>;
 };
 
-export const getDatabase = () => (process.env.DB as unknown as D1Database | undefined);
+type VayoraBindings = Record<string, unknown> & {
+  DB?: D1Database;
+};
+
+let bindings: VayoraBindings = {};
+
+export function setRuntimeBindings(runtimeBindings: VayoraBindings) {
+  bindings = runtimeBindings;
+}
+
+export function getRuntimeString(name: string, fallback = "") {
+  const binding = bindings[name];
+  if (typeof binding === "string" && binding.trim()) return binding;
+  return process.env[name] || fallback;
+}
+
+export const getDatabase = () => bindings.DB || (process.env.DB as unknown as D1Database | undefined);
 
 let schemaReady: Promise<void> | null = null;
 
@@ -86,7 +102,7 @@ async function signature(payload: string, secret: string) {
 }
 
 export async function issueAdminToken(email: string) {
-  const secret = process.env.ADMIN_SESSION_SECRET;
+  const secret = getRuntimeString("ADMIN_SESSION_SECRET");
   if (!secret) throw new Error("ADMIN_SESSION_SECRET is not configured");
   const payload = toBase64Url(encoder.encode(JSON.stringify({ email, exp: Date.now() + 8 * 60 * 60 * 1000 })));
   return `${payload}.${await signature(payload, secret)}`;
@@ -95,10 +111,10 @@ export async function issueAdminToken(email: string) {
 export async function verifyAdmin(request: Request) {
   const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") || "";
   const [payload, suppliedSignature] = token.split(".");
-  const secret = process.env.ADMIN_SESSION_SECRET;
+  const secret = getRuntimeString("ADMIN_SESSION_SECRET");
   if (!payload || !suppliedSignature || !secret || await signature(payload, secret) !== suppliedSignature) return false;
   try {
     const parsed = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(payload.replaceAll("-", "+").replaceAll("_", "/")), (c) => c.charCodeAt(0))));
-    return parsed.email === (process.env.ADMIN_EMAIL || "natul0636@gmail.com") && parsed.exp > Date.now();
+    return parsed.email === getRuntimeString("ADMIN_EMAIL", "natul0636@gmail.com") && parsed.exp > Date.now();
   } catch { return false; }
 }

@@ -1,9 +1,9 @@
 /** Cloudflare Worker entry point for the vinext-starter template. */
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
-import { cleanupExpiredBookings, type D1Database as BookingDatabase } from "../lib/platform";
+import { cleanupExpiredBookings, setRuntimeBindings, type D1Database as BookingDatabase } from "../lib/platform";
 
-interface Env {
+interface Env extends Record<string, unknown> {
   ASSETS: Fetcher;
   DB: BookingDatabase;
   IMAGES: {
@@ -34,6 +34,7 @@ interface ScheduledController {
 
 const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    setRuntimeBindings(env);
     const url = new URL(request.url);
 
     if (url.pathname === "/_vinext/image") {
@@ -50,6 +51,7 @@ const worker = {
     return handler.fetch(request, env, ctx);
   },
   async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+    setRuntimeBindings(env);
     ctx.waitUntil(cleanupExpiredBookings(env.DB));
   },
 };

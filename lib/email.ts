@@ -1,12 +1,14 @@
+import { getRuntimeString } from "./platform";
+
 const escapeHtml = (value: unknown) => String(value ?? "").replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character] || character);
 
 export type EmailResult = { ok: true } | { ok: false; error: string };
 
 export function getEmailConfiguration() {
   return {
-    apiKeyConfigured: Boolean(process.env.RESEND_API_KEY),
-    fromEmail: process.env.BOOKING_FROM_EMAIL || "Vayora Bookings <onboarding@resend.dev>",
-    notificationEmail: process.env.BOOKING_NOTIFICATION_EMAIL || "natul0636@gmail.com",
+    apiKeyConfigured: Boolean(getRuntimeString("RESEND_API_KEY")),
+    fromEmail: getRuntimeString("BOOKING_FROM_EMAIL", "Vayora Bookings <onboarding@resend.dev>"),
+    notificationEmail: getRuntimeString("BOOKING_NOTIFICATION_EMAIL", "natul0636@gmail.com"),
   };
 }
 
@@ -19,7 +21,7 @@ function fileToBase64(bytes: Uint8Array) {
 }
 
 async function send(payload: Record<string, unknown>): Promise<EmailResult> {
-  const apiKey = process.env.RESEND_API_KEY;
+  const apiKey = getRuntimeString("RESEND_API_KEY");
   if (!apiKey) return { ok: false, error: "RESEND_API_KEY is not configured in Cloudflare." };
   const configuration = getEmailConfiguration();
   try {
@@ -49,7 +51,7 @@ async function send(payload: Record<string, unknown>): Promise<EmailResult> {
 }
 
 export async function sendBookingNotification(booking: Record<string, unknown>, bookingId: string, document: File) {
-  const businessPhone = process.env.BOOKING_PHONE || "+919304591415";
+  const businessPhone = getRuntimeString("BOOKING_PHONE", "+919304591415");
   const rows = [
     ["Request ID", bookingId], ["Customer", booking.name], ["Phone", booking.phone], ["Email", booking.email || "Not provided"],
     ["Pickup", booking.pickup], ["Destination", booking.destination], ["Travel date", booking.travelDate], ["Pickup time", booking.pickupTime],
