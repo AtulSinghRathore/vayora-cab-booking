@@ -131,7 +131,7 @@ export default function Home() {
           pickup: form.get("pickup"), destination: selectedCity.displayName,
           travelDate, pickupTime, tripType, vehicle: selectedVehicle.name, days,
           overnightStays, distanceKm: fareBreakdown.billableDistanceKm,
-          fareTotal: fareBreakdown.total, note: form.get("note"),
+          fareTotal: fareBreakdown.total, fareBreakdown, note: form.get("note"),
           requestToken: bookingRequestToken.current,
         };
       const payload = new FormData();
@@ -522,7 +522,7 @@ export default function Home() {
         </div>
         <div>
           <p className="footer-title">Services</p>
-          <a href="#fleet">Outstation</a><a href="#fleet">Local</a><a href="/airport">Airport</a><a href="#business">Corporate</a>
+          <a href="#fleet">Outstation</a><a href="#fleet">Local</a><a href="/airport">Airport</a><a href="https://wa.me/919304591415?text=Hello%20Vayora%2C%20I%20would%20like%20to%20discuss%20business%20travel%20or%20a%20corporate%20cab%20arrangement." target="_blank" rel="noreferrer">Business travel</a>
         </div>
         <div>
           <p className="footer-title">Contact</p>

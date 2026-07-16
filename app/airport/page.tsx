@@ -129,7 +129,7 @@ export default function AirportPage() {
           pickup: pickupLabel, destination: destinationLabel, travelDate, pickupTime,
           tripType: direction === "to-airport" ? "To airport" : "From airport",
           vehicle: selectedVehicle.name, days: 1, overnightStays: 0,
-          distanceKm: fareBreakdown.billableDistanceKm, fareTotal: fareBreakdown.total,
+          distanceKm: fareBreakdown.billableDistanceKm, fareTotal: fareBreakdown.total, fareBreakdown,
           airport: `${airport.name} (${airport.code})`, flightNumber: flightNumber || "Not provided",
           passengers, luggage, pickupAddress: form.get("pickupAddress"), note: form.get("note"),
           requestToken: bookingRequestToken.current,

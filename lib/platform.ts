@@ -39,12 +39,18 @@ async function initializeSchema(db: D1Database) {
       vehicle TEXT NOT NULL, fare_total REAL NOT NULL, status TEXT NOT NULL DEFAULT 'pending',
       details_json TEXT NOT NULL,
       driver_name TEXT, driver_phone TEXT, admin_note TEXT,
+      minimum_booking_amount REAL NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL, updated_at TEXT NOT NULL, cancelled_at TEXT,
       delete_after TEXT, request_token TEXT, notification_status TEXT NOT NULL DEFAULT 'processing'
     )`,
     `CREATE INDEX IF NOT EXISTS idx_bookings_phone ON bookings(phone)`,
     `CREATE INDEX IF NOT EXISTS idx_bookings_travel_date ON bookings(travel_date)`,
     `CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEXT NOT NULL)`,
+    `CREATE TABLE IF NOT EXISTS bill_drafts (
+      booking_id TEXT PRIMARY KEY, summary_json TEXT NOT NULL, items_json TEXT NOT NULL,
+      downloaded_at TEXT, delete_after TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL,
+      FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE
+    )`,
   ];
   for (const query of queries) await db.prepare(query).run();
   const columns = await db.prepare("PRAGMA table_info(bookings)").all<{ name: string }>();
@@ -53,12 +59,14 @@ async function initializeSchema(db: D1Database) {
     ["delete_after", "TEXT"],
     ["request_token", "TEXT"],
     ["notification_status", "TEXT NOT NULL DEFAULT 'processing'"],
+    ["minimum_booking_amount", "REAL NOT NULL DEFAULT 0"],
   ];
   for (const [name, definition] of additions) {
     if (!existing.has(name)) await db.prepare(`ALTER TABLE bookings ADD COLUMN ${name} ${definition}`).run();
   }
   await db.prepare("CREATE INDEX IF NOT EXISTS idx_bookings_delete_after ON bookings(delete_after)").run();
   await db.prepare("CREATE UNIQUE INDEX IF NOT EXISTS idx_bookings_request_token ON bookings(request_token)").run();
+  await db.prepare("CREATE INDEX IF NOT EXISTS idx_bill_drafts_delete_after ON bill_drafts(delete_after)").run();
 }
 
 export async function ensureSchema(db: D1Database) {
@@ -91,6 +99,14 @@ export async function cleanupExpiredBookings(db: D1Database) {
       AND status IN ('completed','cancelled','rejected')
     LIMIT 100
   )`).bind(new Date().toISOString()).run();
+  await db.prepare("DELETE FROM bill_drafts WHERE delete_after IS NOT NULL AND delete_after <= ?")
+    .bind(new Date().toISOString()).run();
+}
+
+export function billDraftDeletionDate(date = new Date()) {
+  const deleteAfter = new Date(date);
+  deleteAfter.setDate(deleteAfter.getDate() + 2);
+  return deleteAfter.toISOString();
 }
 
 const encoder = new TextEncoder();
