@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://vayora-cab-booking.natul0636.workers.dev"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://vayora.anup-travels.workers.dev"),
   title: { default: "Vayora Cabs | Jamshedpur Outstation & Airport Taxi", template: "%s | Vayora Cabs" },
   description: "Book safe outstation and airport cabs from Jamshedpur to Ranchi, Kolkata and cities across India. Transparent fares, verified drivers and direct support.",
   keywords: ["cab booking Jamshedpur", "Jamshedpur outstation cab", "Jamshedpur to Ranchi taxi", "Jamshedpur to Kolkata cab", "Ranchi airport cab from Jamshedpur"],
@@ -44,7 +44,7 @@ export default function RootLayout({
           description: "Outstation and airport cab booking from Jamshedpur to destinations across India.",
           telephone: "+91-93045-91415", email: "natul0636@gmail.com", areaServed: ["Jamshedpur", "Jharkhand", "India"],
           address: { "@type": "PostalAddress", addressLocality: "Jamshedpur", addressRegion: "Jharkhand", addressCountry: "IN" },
-          url: process.env.NEXT_PUBLIC_SITE_URL || "https://vayora-cab-booking.natul0636.workers.dev",
+          url: process.env.NEXT_PUBLIC_SITE_URL || "https://vayora.anup-travels.workers.dev",
         }) }} />
         {children}
       </body>
