@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "vayora",
+  "name": "vayora-cab-booking",
   "main": "./dist/server/index.js",
   "compatibility_date": "2026-05-15",
   "no_bundle": true,
