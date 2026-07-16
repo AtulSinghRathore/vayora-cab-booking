@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
   const adminPassword = getRuntimeString("ADMIN_PASSWORD");
   const sessionSecret = getRuntimeString("ADMIN_SESSION_SECRET");
   if (!adminPassword || !sessionSecret) {
-    return NextResponse.json({ error: "Admin login is not configured yet. Add ADMIN_PASSWORD and ADMIN_SESSION_SECRET as encrypted Cloudflare secrets." }, { status: 503 });
+    return NextResponse.json({ error: "Admin login is temporarily unavailable. Please contact support." }, { status: 503 });
   }
   if (email !== adminEmail || password !== adminPassword) {
     return NextResponse.json({ error: "Invalid admin credentials." }, { status: 401 });
