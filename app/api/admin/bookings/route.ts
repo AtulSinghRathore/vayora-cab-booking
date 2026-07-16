@@ -28,8 +28,8 @@ export async function PATCH(request: NextRequest) {
   const deleteAfter = isTerminal ? current.delete_after || deletionDateFrom(now) : null;
   await db.prepare("UPDATE bookings SET status=?, driver_name=?, driver_phone=?, admin_note=?, delete_after=?, updated_at=? WHERE id=?")
     .bind(status, driverName || null, driverPhone || null, adminNote || null, deleteAfter, now.toISOString(), id).run();
-  const reminderSent = newlyTerminal && deleteAfter
+  const reminderResult = newlyTerminal && deleteAfter
     ? await sendDeletionReminder({ bookingId: id, status, deleteAfter, route: `${current.pickup} to ${current.destination}` })
-    : false;
-  return NextResponse.json({ success: true, reminderSent, deleteAfter });
+    : null;
+  return NextResponse.json({ success: true, reminderSent: reminderResult?.ok || false, deleteAfter });
 }

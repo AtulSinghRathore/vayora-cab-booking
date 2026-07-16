@@ -21,20 +21,33 @@ export async function POST(request: NextRequest) {
 
   const id = createBookingId();
   const now = new Date().toISOString();
+  const requestToken = String(booking.requestToken || crypto.randomUUID()).slice(0, 100);
   const db = getDatabase();
   if (!db) return NextResponse.json({ error: "Booking records are being connected. Please call us to book meanwhile." }, { status: 503 });
 
   await ensureSchema(db);
   await cleanupExpiredBookings(db);
-  booking.identityDocumentDelivery = "admin-email-only";
-  await db.prepare(`INSERT INTO bookings(id,customer_name,phone,email,pickup,destination,travel_date,pickup_time,trip_type,vehicle,fare_total,status,details_json,created_at,updated_at,delete_after)
-    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NULL)`).bind(id, booking.name, booking.phone, booking.email || null, booking.pickup, booking.destination, booking.travelDate, booking.pickupTime || null, booking.tripType, booking.vehicle, Number(booking.fareTotal), "pending", JSON.stringify(booking), now, now).run();
-
-  const emailed = await sendBookingNotification(booking, id, document);
-  if (!emailed) {
-    await db.prepare("DELETE FROM bookings WHERE id=?").bind(id).run();
-    return NextResponse.json({ error: "We could not email your identity document, so no booking was created. Please try again or call Vayora." }, { status: 502 });
+  const existing = await db.prepare("SELECT id,notification_status FROM bookings WHERE request_token=?").bind(requestToken).first<{ id:string; notification_status:string }>();
+  if (existing?.notification_status === "sent") {
+    return NextResponse.json({ success: true, duplicate: true, bookingId: existing.id, message: `Request ${existing.id} was already received. No duplicate email was sent.` });
   }
+  if (existing) return NextResponse.json({ error: "This booking request is already being processed. Please wait instead of submitting it again." }, { status: 409 });
+  booking.identityDocumentDelivery = "admin-email-only";
+  try {
+    await db.prepare(`INSERT INTO bookings(id,customer_name,phone,email,pickup,destination,travel_date,pickup_time,trip_type,vehicle,fare_total,status,details_json,created_at,updated_at,delete_after,request_token,notification_status)
+      VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NULL,?,'processing')`).bind(id, booking.name, booking.phone, booking.email || null, booking.pickup, booking.destination, booking.travelDate, booking.pickupTime || null, booking.tripType, booking.vehicle, Number(booking.fareTotal), "pending", JSON.stringify(booking), now, now, requestToken).run();
+  } catch {
+    const duplicate = await db.prepare("SELECT id,notification_status FROM bookings WHERE request_token=?").bind(requestToken).first<{ id:string; notification_status:string }>();
+    if (duplicate?.notification_status === "sent") return NextResponse.json({ success: true, duplicate: true, bookingId: duplicate.id, message: `Request ${duplicate.id} was already received. No duplicate email was sent.` });
+    return NextResponse.json({ error: "This booking request is already being processed. Please wait instead of submitting it again." }, { status: 409 });
+  }
+
+  const emailResult = await sendBookingNotification(booking, id, document);
+  if (!emailResult.ok) {
+    await db.prepare("DELETE FROM bookings WHERE id=?").bind(id).run();
+    return NextResponse.json({ error: "We could not send the booking email, so no booking was created. Please contact Vayora or ask the admin to run the email test." }, { status: 502 });
+  }
+  await db.prepare("UPDATE bookings SET notification_status='sent',updated_at=? WHERE id=?").bind(new Date().toISOString(), id).run();
   return NextResponse.json({ success: true, bookingId: id, message: `Request ${id} was received and emailed with your identity document. It is pending approval.` });
 }
 

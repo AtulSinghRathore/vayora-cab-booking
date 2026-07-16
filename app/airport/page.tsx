@@ -1,10 +1,11 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import CityAutocomplete, { type CitySuggestion } from "../../components/CityAutocomplete";
 import FareBreakdownPanel from "../../components/FareBreakdownPanel";
 import Brand from "../../components/Brand";
+import StatusMessage, { type StatusTone } from "../../components/StatusMessage";
 import { calculateFare, estimateRoadDistanceKm } from "../../lib/fare-calculator";
 import { defaultFareConfig, parseFareProperties, type FareConfig, type VehicleKey } from "../../lib/fare-config";
 
@@ -43,7 +44,10 @@ export default function AirportPage() {
   const [checking, setChecking] = useState(false);
   const [notice, setNotice] = useState("");
   const [bookingStatus, setBookingStatus] = useState("");
+  const [bookingTone, setBookingTone] = useState<StatusTone>("info");
   const [submitting, setSubmitting] = useState(false);
+  const [bookingSubmitted, setBookingSubmitted] = useState(false);
+  const bookingRequestToken = useRef(crypto.randomUUID());
 
   useEffect(() => {
     fetch("/api/fares")
@@ -106,6 +110,9 @@ export default function AirportPage() {
     }
     setShowFares(true);
     setSelectedCab("");
+    setBookingStatus("");
+    setBookingSubmitted(false);
+    bookingRequestToken.current = crypto.randomUUID();
     setChecking(false);
     window.setTimeout(() => document.getElementById("airport-fares")?.scrollIntoView({ behavior: "smooth" }), 100);
   }
@@ -125,13 +132,17 @@ export default function AirportPage() {
           distanceKm: fareBreakdown.billableDistanceKm, fareTotal: fareBreakdown.total,
           airport: `${airport.name} (${airport.code})`, flightNumber: flightNumber || "Not provided",
           passengers, luggage, pickupAddress: form.get("pickupAddress"), note: form.get("note"),
+          requestToken: bookingRequestToken.current,
         };
       const payload = new FormData(); payload.set("booking", JSON.stringify(booking)); payload.set("identityDocument", form.get("identityDocument") as File);
       const response = await fetch("/api/bookings", { method: "POST", body: payload });
       const result = await response.json();
       setBookingStatus(result.message || result.error || "Unable to send the airport booking request.");
+      setBookingTone(response.ok ? "success" : "error");
+      if (response.ok) setBookingSubmitted(true);
     } catch {
       setBookingStatus("Unable to send the request. Please call +91 93045 91415.");
+      setBookingTone("error");
     } finally {
       setSubmitting(false);
     }
@@ -184,7 +195,7 @@ export default function AirportPage() {
             </div>
             <p className="extras-notice">Tolls, airport parking, permits and state-entry charges are added later at actual cost against receipts.</p>
             <button className="primary-button airport-submit" type="submit" disabled={checking}>{checking ? "Finding airport fares…" : "Check airport fares →"}</button>
-            <p className="form-notice" role="status">{notice}</p>
+            <StatusMessage tone="warning">{notice}</StatusMessage>
           </form>
         </div>
       </section>
@@ -219,8 +230,8 @@ export default function AirportPage() {
                 </div>
                 <label className="consent-row"><input type="checkbox" required /><span>I consent to this identity document being emailed privately to Vayora for booking verification. It is not stored in the website database. Vayora will delete the admin-mailbox copy within seven days after the booking is completed, cancelled or rejected.</span></label>
                 <p className="waiting-note">From-airport rides include {fareConfig.airport.freeWaitingMinutes} minutes free waiting. Additional waiting: ₹{fareConfig.airport.waitingPerHour}/hour.</p>
-                <button className="primary-button booking-submit" type="submit" disabled={submitting}>{submitting ? "Sending request…" : `Request booking for ₹${Math.round(fareBreakdown.total).toLocaleString("en-IN")}`}</button>
-                <p className="booking-status" role="status">{bookingStatus}</p>
+                <button className={`primary-button booking-submit ${submitting ? "is-sending" : ""} ${bookingSubmitted ? "is-sent" : ""}`} type="submit" disabled={submitting || bookingSubmitted}>{bookingSubmitted ? "Request sent ✓" : submitting ? "Sending request…" : `Request booking for ₹${Math.round(fareBreakdown.total).toLocaleString("en-IN")}`}</button>
+                <StatusMessage tone={bookingTone}>{bookingStatus}</StatusMessage>
               </form>
             </div>}
           </div>

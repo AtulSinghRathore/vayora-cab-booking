@@ -14,6 +14,8 @@ Vayora is a responsive cab-booking website for trips starting in Jamshedpur and 
 - Identity-document upload delivered directly to the private admin email without database or object storage
 - Booking ID lookup, amendments and configurable cancellation fees
 - Password-protected admin approval, driver assignment, calendar and live fare editor
+- Admin system diagnostics with a Resend test-email action
+- Client and database idempotency protection against duplicate booking emails
 
 ## Cloudflare production services
 
@@ -71,6 +73,12 @@ ADMIN_SESSION_SECRET=generate_a_long_random_secret
 ```
 
 Never commit the real API key. `.env.example` contains only safe placeholders.
+
+### Admin login
+
+Store `ADMIN_PASSWORD` and `ADMIN_SESSION_SECRET` as encrypted Cloudflare secrets under the deployed Worker's **Settings → Variables and Secrets** page. `ADMIN_PASSWORD` is the password the administrator types on `/admin`. `ADMIN_SESSION_SECRET` must be a separate long random value used only to sign eight-hour admin sessions. Neither value belongs in GitHub or the fare property file.
+
+After signing in, open the **System** tab. It shows whether D1 and the Resend API key are connected and can send a test email without creating a customer booking.
 
 ## Local development
 

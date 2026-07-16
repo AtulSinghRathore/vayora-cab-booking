@@ -12,27 +12,47 @@ export type D1Database = {
 
 export const getDatabase = () => (process.env.DB as unknown as D1Database | undefined);
 
-export async function ensureSchema(db: D1Database) {
+let schemaReady: Promise<void> | null = null;
+
+async function initializeSchema(db: D1Database) {
   const queries = [
     `CREATE TABLE IF NOT EXISTS bookings (
       id TEXT PRIMARY KEY, customer_name TEXT NOT NULL, phone TEXT NOT NULL,
       email TEXT, pickup TEXT NOT NULL, destination TEXT NOT NULL,
       travel_date TEXT NOT NULL, pickup_time TEXT, trip_type TEXT NOT NULL,
       vehicle TEXT NOT NULL, fare_total REAL NOT NULL, status TEXT NOT NULL DEFAULT 'pending',
-      details_json TEXT NOT NULL, document_key TEXT, document_delete_after TEXT,
+      details_json TEXT NOT NULL,
       driver_name TEXT, driver_phone TEXT, admin_note TEXT,
       created_at TEXT NOT NULL, updated_at TEXT NOT NULL, cancelled_at TEXT,
-      delete_after TEXT
+      delete_after TEXT, request_token TEXT, notification_status TEXT NOT NULL DEFAULT 'processing'
     )`,
     `CREATE INDEX IF NOT EXISTS idx_bookings_phone ON bookings(phone)`,
     `CREATE INDEX IF NOT EXISTS idx_bookings_travel_date ON bookings(travel_date)`,
     `CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEXT NOT NULL)`,
   ];
   for (const query of queries) await db.prepare(query).run();
-  // Existing installations predate record-level retention. D1 does not support
-  // ADD COLUMN IF NOT EXISTS, so a duplicate-column error is safely ignored.
-  try { await db.prepare("ALTER TABLE bookings ADD COLUMN delete_after TEXT").run(); } catch { /* already present */ }
+  const columns = await db.prepare("PRAGMA table_info(bookings)").all<{ name: string }>();
+  const existing = new Set((columns.results || []).map((column) => column.name));
+  const additions = [
+    ["delete_after", "TEXT"],
+    ["request_token", "TEXT"],
+    ["notification_status", "TEXT NOT NULL DEFAULT 'processing'"],
+  ];
+  for (const [name, definition] of additions) {
+    if (!existing.has(name)) await db.prepare(`ALTER TABLE bookings ADD COLUMN ${name} ${definition}`).run();
+  }
   await db.prepare("CREATE INDEX IF NOT EXISTS idx_bookings_delete_after ON bookings(delete_after)").run();
+  await db.prepare("CREATE UNIQUE INDEX IF NOT EXISTS idx_bookings_request_token ON bookings(request_token)").run();
+}
+
+export async function ensureSchema(db: D1Database) {
+  if (!schemaReady) {
+    schemaReady = initializeSchema(db).catch((error) => {
+      schemaReady = null;
+      throw error;
+    });
+  }
+  await schemaReady;
 }
 
 export function createBookingId() {

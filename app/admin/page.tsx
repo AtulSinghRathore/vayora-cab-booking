@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import Brand from "../../components/Brand";
+import StatusMessage, { type StatusTone } from "../../components/StatusMessage";
 
 type Booking = {
   id: string;
@@ -43,36 +44,45 @@ airport.waiting.freeMinutes=30
 airport.waiting.perHour=200`;
 
 const terminalStatuses = new Set(["completed", "cancelled", "rejected"]);
+type Diagnostics = { email: { apiKeyConfigured: boolean; fromEmail: string; notificationEmail: string }; databaseConfigured: boolean };
 
 export default function AdminPage() {
   const [token, setToken] = useState(() => typeof window === "undefined" ? "" : sessionStorage.getItem("vayora-admin") || "");
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [properties, setProperties] = useState(defaultProperties);
-  const [tab, setTab] = useState<"requests" | "calendar" | "fares">("requests");
+  const [tab, setTab] = useState<"requests" | "calendar" | "fares" | "system">("requests");
   const [message, setMessage] = useState("");
+  const [messageTone, setMessageTone] = useState<StatusTone>("info");
+  const [diagnostics, setDiagnostics] = useState<Diagnostics | null>(null);
+  const [testingEmail, setTestingEmail] = useState(false);
 
   const signOut = useCallback(() => {
     sessionStorage.removeItem("vayora-admin");
     setToken("");
     setBookings([]);
+    setDiagnostics(null);
   }, []);
 
   const load = useCallback(async (auth: string) => {
     const headers = { authorization: `Bearer ${auth}` };
-    const [bookingsResponse, faresResponse] = await Promise.all([
+    const [bookingsResponse, faresResponse, diagnosticsResponse] = await Promise.all([
       fetch("/api/admin/bookings", { headers }),
       fetch("/api/admin/fares", { headers }),
+      fetch("/api/admin/diagnostics", { headers }),
     ]);
     const bookingsResult = await bookingsResponse.json();
     const faresResult = await faresResponse.json();
-    if (bookingsResponse.status === 401 || faresResponse.status === 401) {
+    const diagnosticsResult = await diagnosticsResponse.json();
+    if (bookingsResponse.status === 401 || faresResponse.status === 401 || diagnosticsResponse.status === 401) {
       signOut();
       setMessage("Your admin session expired. Please sign in again.");
+      setMessageTone("warning");
       return;
     }
     if (bookingsResponse.ok) setBookings(bookingsResult);
-    else setMessage(bookingsResult.error || "Unable to load bookings.");
+    else { setMessage(bookingsResult.error || "Unable to load bookings."); setMessageTone("error"); }
     if (faresResult.properties) setProperties(faresResult.properties);
+    if (diagnosticsResponse.ok) setDiagnostics(diagnosticsResult);
   }, [signOut]);
 
   useEffect(() => {
@@ -92,6 +102,7 @@ export default function AdminPage() {
     const result = await response.json();
     if (!response.ok) {
       setMessage(result.error || "Unable to sign in.");
+      setMessageTone("error");
       return;
     }
     sessionStorage.setItem("vayora-admin", result.token);
@@ -115,11 +126,13 @@ export default function AdminPage() {
     const result = await response.json();
     if (!response.ok) {
       setMessage(result.error || "Unable to update booking.");
+      setMessageTone("error");
       return;
     }
     setMessage(result.reminderSent
       ? "Booking updated. An Aadhaar-email deletion reminder was sent to the admin mailbox."
       : "Booking updated.");
+    setMessageTone("success");
     await load(token);
   }
 
@@ -131,6 +144,23 @@ export default function AdminPage() {
     });
     const result = await response.json();
     setMessage(result.message || result.error || "Unable to save fares.");
+    setMessageTone(response.ok ? "success" : "error");
+  }
+
+  async function testEmail() {
+    setTestingEmail(true);
+    try {
+      const response = await fetch("/api/admin/diagnostics", { method: "POST", headers: { authorization: `Bearer ${token}` } });
+      const result = await response.json();
+      setMessage(result.message || result.error || "Unable to send the test email.");
+      setMessageTone(response.ok ? "success" : "error");
+      await load(token);
+    } catch {
+      setMessage("Unable to reach the email test. Please try again.");
+      setMessageTone("error");
+    } finally {
+      setTestingEmail(false);
+    }
   }
 
   const calendar = useMemo(
@@ -150,7 +180,8 @@ export default function AdminPage() {
             <label><span>Password</span><input name="password" type="password" required /></label>
             <button className="primary-button">Sign in securely</button>
           </form>
-          <p className="booking-status">{message}</p>
+          <StatusMessage tone={messageTone}>{message}</StatusMessage>
+          <div className="admin-credential-note"><strong>Where is the password stored?</strong>Your password is an encrypted Cloudflare secret named ADMIN_PASSWORD. It is never saved in this website or GitHub.</div>
         </section>
       </main>
     );
@@ -160,14 +191,14 @@ export default function AdminPage() {
     <main className="admin-page">
       <header className="admin-header"><Brand name="Vayora Admin" /><button onClick={signOut}>Sign out</button></header>
       <div className="admin-tabs">
-        {(["requests", "calendar", "fares"] as const).map((item) => (
+        {(["requests", "calendar", "fares", "system"] as const).map((item) => (
           <button className={tab === item ? "active" : ""} onClick={() => setTab(item)} key={item}>
             {item[0].toUpperCase() + item.slice(1)}
             {item === "requests" && <span>{bookings.filter((booking) => booking.status === "pending").length}</span>}
           </button>
         ))}
       </div>
-      <p className="booking-status admin-message">{message}</p>
+      <StatusMessage className="admin-message" tone={messageTone}>{message}</StatusMessage>
 
       {tab === "requests" && (
         <section className="admin-grid">
@@ -213,6 +244,21 @@ export default function AdminPage() {
           <div><p className="eyebrow">Live configuration</p><h2>Fare properties</h2><p>Edit every fare in one place. Saving creates a live database override; the property file remains the safe default.</p></div>
           <textarea value={properties} onChange={(event) => setProperties(event.target.value)} spellCheck={false} />
           <button className="primary-button" onClick={saveFares}>Save and publish fares</button>
+        </section>
+      )}
+
+      {tab === "system" && (
+        <section className="system-panel">
+          <p className="eyebrow">Connection check</p>
+          <h2>Email and database</h2>
+          <p>Use this page to diagnose booking-email delivery without creating a customer booking.</p>
+          <div className="diagnostic-grid">
+            <div className={`diagnostic-card ${diagnostics?.databaseConfigured ? "ok" : "problem"}`}><span>D1 booking database</span><strong>{diagnostics?.databaseConfigured ? "Connected" : "Not connected"}</strong></div>
+            <div className={`diagnostic-card ${diagnostics?.email.apiKeyConfigured ? "ok" : "problem"}`}><span>Resend API key</span><strong>{diagnostics?.email.apiKeyConfigured ? "Configured" : "Missing"}</strong></div>
+            <div className="diagnostic-card"><span>Notification recipient</span><strong>{diagnostics?.email.notificationEmail || "Loading…"}</strong></div>
+            <div className="diagnostic-card"><span>Sender</span><strong>{diagnostics?.email.fromEmail || "Loading…"}</strong></div>
+          </div>
+          <button className="primary-button" onClick={testEmail} disabled={testingEmail}>{testingEmail ? "Sending test…" : "Send test email"}</button>
         </section>
       )}
     </main>

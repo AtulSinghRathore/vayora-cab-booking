@@ -63,6 +63,8 @@ select {
 .admin-page { min-height:100vh;background:#f4f6f3;padding-bottom:80px; }.admin-header { display:flex;justify-content:space-between;align-items:center;padding:20px 5vw;background:white;border-bottom:1px solid var(--line); }.admin-tabs { display:flex;gap:8px;width:min(1180px,calc(100% - 36px));margin:30px auto; }.admin-tabs button { padding:12px 17px;border:0;border-radius:9px;background:white;cursor:pointer;font-weight:750; }.admin-tabs button.active { background:var(--navy);color:white; }.admin-tabs span { margin-left:8px;padding:2px 7px;border-radius:99px;background:var(--saffron);color:white; }
 .admin-message,.admin-grid,.calendar-list,.fare-editor { width:min(1180px,calc(100% - 36px));margin-left:auto;margin-right:auto; }.admin-grid { display:grid;grid-template-columns:repeat(2,1fr);gap:18px; }.admin-booking-card,.calendar-list,.fare-editor { padding:24px;border:1px solid var(--line);border-radius:16px;background:white; }.admin-fields { display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0; }.admin-fields .full-field { grid-column:1/-1; }
 .retention-reminder { margin:16px 0 0;padding:10px 12px;border-radius:9px;font-size:.76rem;font-weight:680;line-height:1.45; }.retention-reminder.active { background:#edf5ee;color:var(--forest); }.retention-reminder.due { background:#fff0df;color:#87400d; }
+.admin-credential-note { margin-top:18px;padding:14px 16px;border-left:3px solid var(--forest);border-radius:0 10px 10px 0;background:rgba(24,79,58,.07);color:var(--muted);font-size:.8rem;line-height:1.55; }.admin-credential-note strong { display:block;margin-bottom:3px;color:var(--forest); }
+.system-panel { width:min(900px,calc(100% - 36px));margin:0 auto;padding:26px;border:1px solid var(--line);border-radius:18px;background:white; }.diagnostic-grid { display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:22px 0; }.diagnostic-card { padding:16px;border:1px solid var(--line);border-radius:12px;background:#f8faf7; }.diagnostic-card span,.diagnostic-card strong { display:block; }.diagnostic-card span { color:var(--muted);font-size:.7rem;text-transform:uppercase;letter-spacing:.08em; }.diagnostic-card strong { margin-top:7px;color:var(--navy);font-size:.9rem;overflow-wrap:anywhere; }.diagnostic-card.ok { border-color:#abd4ba;background:#f0f8f2; }.diagnostic-card.problem { border-color:#efc1b9;background:#fff5f2; }
 .calendar-list article { display:grid;grid-template-columns:140px 1fr;gap:24px;padding:20px 0;border-top:1px solid var(--line); }.calendar-list time { color:var(--forest);font-weight:800; }.calendar-list h3,.calendar-list p { margin:0 0 6px; }
 .fare-editor { display:grid;grid-template-columns:.65fr 1.35fr;gap:24px; }.fare-editor textarea { min-height:560px;padding:18px;border:1px solid var(--line);border-radius:12px;background:#091b2a;color:#e8f5ed;font:13px/1.65 ui-monospace,monospace; }.fare-editor button { grid-column:2; }
 
@@ -71,6 +73,7 @@ select {
   .booking-record dl { grid-template-columns:1fr 1fr; }
   .fare-editor button { grid-column:1; }
   .admin-tabs { overflow:auto; }
+  .diagnostic-grid { grid-template-columns:1fr; }
 }
 
 a {
@@ -486,22 +489,14 @@ h1 span {
   transition: transform 180ms ease-out;
 }
 
-.primary-button:hover,
-.primary-button:focus-visible {
+.primary-button:not(:disabled):hover,
+.primary-button:not(:disabled):focus-visible {
   transform: translateY(-2px);
   box-shadow: 0 11px 23px rgba(229, 161, 26, 0.28);
 }
 
-.primary-button:hover span {
+.primary-button:not(:disabled):hover span {
   transform: translateX(4px);
-}
-
-.form-notice {
-  min-height: 18px;
-  margin: 9px 3px -3px;
-  color: var(--forest);
-  font-size: 0.76rem;
-  font-weight: 560;
 }
 
 .trip-details-row {
@@ -1085,17 +1080,19 @@ h1 span {
 }
 
 .booking-submit:disabled {
-  cursor: wait;
-  opacity: 0.7;
+  cursor: not-allowed;
+  opacity: 1;
 }
+.booking-submit.is-sending { cursor:wait;opacity:.72; }
+.booking-submit.is-sent { border:1px solid #c5cec8;background:#dfe5e1;color:#536159;box-shadow:none; }
 
-.booking-status {
-  min-height: 18px;
-  margin: 10px 0 0;
-  color: var(--forest);
-  font-size: 0.78rem;
-  font-weight: 620;
-}
+.status-message { display:flex;align-items:flex-start;gap:11px;margin:14px 0 0;padding:13px 15px;border:1px solid transparent;border-radius:12px;font-size:.8rem;font-weight:650;line-height:1.5;box-shadow:0 8px 22px rgba(11,31,51,.05); }
+.status-message-icon { display:grid;flex:0 0 24px;width:24px;height:24px;place-items:center;border-radius:50%;font-size:.72rem;font-weight:850; }
+.status-message-success { border-color:#a9d8ba;background:linear-gradient(135deg,#f1fbf4,#e5f6eb);color:#125d35; }.status-message-success .status-message-icon { background:#167a46;color:white; }
+.status-message-error { border-color:#efb9b9;background:linear-gradient(135deg,#fff7f7,#fde9e9);color:#902b2b; }.status-message-error .status-message-icon { background:#b83b3b;color:white; }
+.status-message-warning { border-color:#efd09c;background:linear-gradient(135deg,#fffaf0,#fff0d8);color:#77440c; }.status-message-warning .status-message-icon { background:#d07a16;color:white; }
+.status-message-info { border-color:#b8cfe4;background:linear-gradient(135deg,#f5f9fd,#eaf2f9);color:#194d70; }.status-message-info .status-message-icon { background:#28688f;color:white;font-family:Georgia,serif; }
+.admin-message.status-message { width:min(1180px,calc(100% - 36px));margin:0 auto 20px; }
 
 .services-section,
 .promise-section,

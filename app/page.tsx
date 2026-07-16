@@ -1,9 +1,10 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import CityAutocomplete, { type CitySuggestion } from "../components/CityAutocomplete";
 import FareBreakdownPanel from "../components/FareBreakdownPanel";
 import Brand from "../components/Brand";
+import StatusMessage, { type StatusTone } from "../components/StatusMessage";
 import { calculateFare, estimateRoadDistanceKm } from "../lib/fare-calculator";
 import {
   defaultFareConfig,
@@ -40,7 +41,10 @@ export default function Home() {
   const [travelDate, setTravelDate] = useState(getTomorrowDate);
   const [pickupTime, setPickupTime] = useState("08:00");
   const [bookingStatus, setBookingStatus] = useState("");
+  const [bookingTone, setBookingTone] = useState<StatusTone>("info");
   const [submittingBooking, setSubmittingBooking] = useState(false);
+  const [bookingSubmitted, setBookingSubmitted] = useState(false);
+  const bookingRequestToken = useRef(crypto.randomUUID());
 
   useEffect(() => {
     fetch("/api/fares")
@@ -107,6 +111,8 @@ export default function Home() {
     setShowFares(true);
     setSelectedCab("");
     setBookingStatus("");
+    setBookingSubmitted(false);
+    bookingRequestToken.current = crypto.randomUUID();
     setCheckingFares(false);
     window.setTimeout(() => {
       document.getElementById("fares")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -126,6 +132,7 @@ export default function Home() {
           travelDate, pickupTime, tripType, vehicle: selectedVehicle.name, days,
           overnightStays, distanceKm: fareBreakdown.billableDistanceKm,
           fareTotal: fareBreakdown.total, note: form.get("note"),
+          requestToken: bookingRequestToken.current,
         };
       const payload = new FormData();
       payload.set("booking", JSON.stringify(booking));
@@ -133,8 +140,11 @@ export default function Home() {
       const response = await fetch("/api/bookings", { method: "POST", body: payload });
       const result = await response.json();
       setBookingStatus(result.message || result.error || "Unable to send the booking request.");
+      setBookingTone(response.ok ? "success" : "error");
+      if (response.ok) setBookingSubmitted(true);
     } catch {
       setBookingStatus("Unable to send the booking request. Please call +91 93045 91415.");
+      setBookingTone("error");
     } finally {
       setSubmittingBooking(false);
     }
@@ -275,9 +285,7 @@ export default function Home() {
               </label>
             </div>
             <p className="extras-notice">Tolls, parking and permit/state-entry charges are excluded from this estimate and added later at actual cost against receipts.</p>
-            <p className="form-notice" role="status" aria-live="polite">
-              {notice}
-            </p>
+            <StatusMessage tone={notice.startsWith("Finding") ? "info" : "warning"}>{notice}</StatusMessage>
           </form>
 
           <div className="trust-row" aria-label="Vayora benefits">
@@ -345,10 +353,10 @@ export default function Home() {
                     <label className="full-field identity-upload"><span>Identity document (Aadhaar or government ID) *</span><input name="identityDocument" type="file" accept="image/jpeg,image/png" required /><small>Normal or masked Aadhaar is accepted. JPG or PNG, maximum 5 MB. We do not validate it with any third party.</small></label>
                   </div>
                   <label className="consent-row"><input type="checkbox" required /><span>I consent to this identity document being emailed privately to Vayora for booking verification. It is not stored in the website database. Vayora will delete the admin-mailbox copy within seven days after the booking is completed, cancelled or rejected.</span></label>
-                  <button className="primary-button booking-submit" type="submit" disabled={submittingBooking}>
-                    {submittingBooking ? "Sending request…" : `Request booking for ₹${Math.round(fareBreakdown.total).toLocaleString("en-IN")}`}
+                  <button className={`primary-button booking-submit ${submittingBooking ? "is-sending" : ""} ${bookingSubmitted ? "is-sent" : ""}`} type="submit" disabled={submittingBooking || bookingSubmitted}>
+                    {bookingSubmitted ? "Request sent ✓" : submittingBooking ? "Sending request…" : `Request booking for ₹${Math.round(fareBreakdown.total).toLocaleString("en-IN")}`}
                   </button>
-                  <p className="booking-status" role="status" aria-live="polite">{bookingStatus}</p>
+                  <StatusMessage tone={bookingTone}>{bookingStatus}</StatusMessage>
                   <p className="privacy-note">Your identity image goes only to Vayora&apos;s private admin email. It is not stored in the website database and will be removed from the admin mailbox within seven days after completion, cancellation or rejection.</p>
                 </form>
                 <div className="selection-bar" role="status" aria-live="polite">
